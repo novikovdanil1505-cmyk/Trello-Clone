@@ -41,7 +41,7 @@ function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => vo
       exit={{ opacity: 0, scale: 0.8 }}
       transition={{ type: "spring", stiffness: 300, damping: 25 }} 
       onClick={() => onOpen(card)}
-      className={`bg-white/50 dark:bg-slate-800/50 backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer active:cursor-grabbing border border-white/80 dark:border-white/10 shadow-sm hover:bg-white/80 dark:hover:bg-slate-800/80 transition-colors select-none`}
+      className={`bg-white/50 dark:bg-zinc-800/50 backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer active:cursor-grabbing border border-white/80 dark:border-white/10 shadow-sm hover:bg-white/80 dark:hover:bg-zinc-800/80 transition-colors select-none`}
     >
       <p className="text-sm text-slate-800 dark:text-slate-100 font-medium mb-1">{card.title}</p>
       <div className="flex gap-2 mt-2 text-xs text-slate-500 dark:text-slate-400">
@@ -72,7 +72,7 @@ function ArchiveDropZone({ isDragging }: { isDragging: boolean }) {
       className={`fixed bottom-6 right-6 z-[70] w-20 h-20 rounded-full flex items-center justify-center shadow-2xl border-2 transition-all duration-300 ${
         isDragging ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-50 pointer-events-none'
       } ${
-        isOver ? 'bg-red-500 border-red-300 scale-110' : 'bg-slate-800/80 dark:bg-slate-100/80 backdrop-blur-xl border-white/20 dark:border-black/20'
+        isOver ? 'bg-red-500 border-red-300 scale-110' : 'bg-slate-800/80 dark:bg-zinc-100/80 backdrop-blur-xl border-white/20 dark:border-black/20'
       }`}
     >
       <span className="text-4xl pointer-events-none">🗄️</span>
@@ -98,7 +98,7 @@ function AddCard({ columnId, onAdd }: { columnId: string, onAdd: (colId: string,
   }
 
   return (
-    <motion.form onSubmit={handleSubmit} className="mt-2 p-2 bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl rounded-xl border border-white/80 dark:border-white/10 shadow-sm"
+    <motion.form onSubmit={handleSubmit} className="mt-2 p-2 bg-white/60 dark:bg-zinc-800/60 backdrop-blur-xl rounded-xl border border-white/80 dark:border-white/10 shadow-sm"
       initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}>
       <textarea value={title} onChange={(e) => setTitle(e.target.value)} 
         className="w-full p-2 bg-transparent rounded-lg outline-none focus:ring-1 focus:ring-blue-400 text-sm resize-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500" 
@@ -129,7 +129,7 @@ function CardModal({ card, onClose, onUpdate, onArchive }: { card: CardType, onC
   return (
     <motion.div className="fixed inset-0 bg-black/20 dark:bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4"
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
-      <motion.div className="bg-white/60 dark:bg-slate-900/80 backdrop-blur-2xl w-full max-w-md rounded-3xl p-6 border border-white/80 dark:border-white/10 shadow-2xl overflow-y-auto max-h-[90vh] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+      <motion.div className="bg-white/60 dark:bg-zinc-900/80 backdrop-blur-2xl w-full max-w-md rounded-3xl p-6 border border-white/80 dark:border-white/10 shadow-2xl overflow-y-auto max-h-[90vh] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }} onClick={(e) => e.stopPropagation()}>
         
@@ -140,7 +140,7 @@ function CardModal({ card, onClose, onUpdate, onArchive }: { card: CardType, onC
         </div>
 
         <div className="mb-6">
-          <div className="flex flex-col gap-4 items-center bg-white/80 dark:bg-slate-800/50 p-4 rounded-2xl border border-white/80 dark:border-white/10 shadow-sm">
+          <div className="flex flex-col gap-4 items-center bg-white/80 dark:bg-zinc-800/50 p-4 rounded-2xl border border-white/80 dark:border-white/10 shadow-sm">
             <div className="w-full flex justify-center [&_*]:!text-slate-800 dark:[&_*]:!text-slate-200">
               <DayPicker 
                 mode="single" 
@@ -169,7 +169,7 @@ function CardModal({ card, onClose, onUpdate, onArchive }: { card: CardType, onC
         <div className="mb-6">
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Комментарий</h3>
           <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Напишите что-нибудь..."
-            className="w-full p-3 bg-white/40 dark:bg-slate-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-blue-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 resize-none" rows={4} />
+            className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-blue-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 resize-none" rows={4} />
         </div>
 
         <div className="flex gap-3">
@@ -189,7 +189,7 @@ function ArchivePanel({ cards, onClose, onRestore }: { cards: CardType[], onClos
     <motion.div className="fixed inset-0 z-50 flex justify-end" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
       <div className="absolute inset-0 bg-black/20 dark:bg-black/60 backdrop-blur-sm"></div>
       <motion.div 
-        className="relative bg-white/60 dark:bg-slate-900/80 backdrop-blur-2xl w-full max-w-md h-full p-6 border-l border-white/80 dark:border-white/10 shadow-2xl overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        className="relative bg-white/60 dark:bg-zinc-900/80 backdrop-blur-2xl w-full max-w-md h-full p-6 border-l border-white/80 dark:border-white/10 shadow-2xl overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         onClick={(e) => e.stopPropagation()}
@@ -208,7 +208,7 @@ function ArchivePanel({ cards, onClose, onRestore }: { cards: CardType[], onClos
           <div className="space-y-3">
             {cards.map(card => (
               <motion.div key={card.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8 }}
-                className="bg-white/50 dark:bg-slate-800/50 p-3 rounded-xl border border-white/80 dark:border-white/10 shadow-sm flex justify-between items-center gap-2">
+                className="bg-white/50 dark:bg-zinc-800/50 p-3 rounded-xl border border-white/80 dark:border-white/10 shadow-sm flex justify-between items-center gap-2">
                 <p className="text-sm text-slate-800 dark:text-slate-100 font-medium truncate flex-1">{card.title}</p>
                 <button onClick={() => onRestore(card.id)} className="text-xs bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-colors font-medium whitespace-nowrap">
                   Вернуть
@@ -283,7 +283,6 @@ export default function Home() {
     }
   }, [undoTimer, pendingDelete]);
 
-  // Сенсоры: мышь с дистанцией 10px, тач с задержкой 200мс
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 10 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } })
@@ -372,9 +371,11 @@ export default function Home() {
   const archivedCards = cards.filter(c => c.is_archived);
 
   return (
-    <main className="bg-slate-100 dark:bg-slate-950 h-screen flex flex-col overflow-hidden relative bg-gradient-to-br from-sky-100 via-purple-50 to-pink-100 dark:from-slate-900 dark:via-slate-950 dark:to-black transition-colors">
-      <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-blue-300/40 dark:bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-purple-300/40 dark:bg-purple-600/20 rounded-full blur-[120px] pointer-events-none"></div>
+    // ИЗМЕНЕНО: Темная тема стала монохромной темно-серой с градиентами
+    <main className="bg-slate-100 h-screen flex flex-col overflow-hidden relative bg-gradient-to-br from-sky-100 via-purple-50 to-pink-100 dark:from-zinc-800 dark:via-zinc-900 dark:to-neutral-900 transition-colors">
+      {/* ИЗМЕНЕНО: Орбы стали темно-серыми (монохромными) */}
+      <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-blue-300/40 dark:bg-zinc-700/30 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-purple-300/40 dark:bg-neutral-700/30 rounded-full blur-[120px] pointer-events-none"></div>
 
       <header className="relative z-10 flex items-center justify-between p-4 bg-white/40 dark:bg-white/5 backdrop-blur-2xl border-b border-white/60 dark:border-white/10 shadow-sm">
         <h1 className="text-slate-800 dark:text-white font-semibold text-lg tracking-tight">NOVIKOV PRODUCTION</h1>
@@ -443,7 +444,7 @@ export default function Home() {
 
           <DragOverlay>
             {activeCard && (
-              <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-2xl p-3 rounded-2xl shadow-2xl w-72 cursor-grabbing border border-white dark:border-white/10 rotate-3">
+              <div className="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-2xl p-3 rounded-2xl shadow-2xl w-72 cursor-grabbing border border-white dark:border-white/10 rotate-3">
                 <p className="text-sm text-slate-800 dark:text-slate-100 font-medium">{activeCard.title}</p>
               </div>
             )}
@@ -469,7 +470,7 @@ export default function Home() {
       <AnimatePresence>
         {pendingDelete && (
           <motion.div 
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-slate-800/80 dark:bg-slate-100/80 backdrop-blur-xl text-white dark:text-slate-900 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-4 border border-white/10 dark:border-black/10"
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-slate-800/80 dark:bg-zinc-100/80 backdrop-blur-xl text-white dark:text-zinc-900 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-4 border border-white/10 dark:border-black/10"
             initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
           >
