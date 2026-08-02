@@ -179,12 +179,10 @@ function CardModal({ card, onClose, onUpdate, onArchive }: { card: CardType, onC
                 classNames={{
                   caption: "flex justify-between items-center py-2", 
                   caption_label: "!text-slate-900 dark:!text-white font-bold text-base",
-                  // ИЗМЕНЕНО: Стрелки стали красными
                   nav_button: "!text-red-500 dark:!text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-full p-1 transition-colors",
                   head_cell: "!text-slate-700 dark:!text-slate-400 text-xs font-bold w-9 text-center",
                   day: "w-9 h-9 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors text-center text-sm font-medium",
                   day_selected: "bg-slate-800 dark:bg-slate-100 !text-white dark:!text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 hover:!text-white dark:hover:!text-slate-900 font-bold",
-                  // ИЗМЕНЕНО: Обводка сегодняшней даты стала красной
                   day_today: "font-bold !text-red-500 dark:!text-red-400 ring-1 ring-red-500 dark:ring-red-400 rounded-full",
                 } as any} 
               />
@@ -445,9 +443,10 @@ export default function Home() {
                     <h2 className="font-semibold text-slate-700 dark:text-slate-200 text-sm uppercase tracking-wider">{col.title}</h2>
                     <div className="flex items-center gap-1">
                       <span className="bg-black/5 dark:bg-white/10 text-slate-600 dark:text-slate-300 text-xs px-2 py-1 rounded-full font-medium">{colCards.length}</span>
+                      {/* ИЗМЕНЕНО: Классы opacity-0 group-hover:opacity-100 удалены, иконка видна всегда */}
                       <button 
                         onClick={() => handleDeleteColumn(col)} 
-                        className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-full p-1 transition-all duration-200"
+                        className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-full p-1 transition-all duration-200"
                         title="Удалить колонку"
                       >
                         <TrashIcon size={16} />
