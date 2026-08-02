@@ -36,6 +36,21 @@ const MoonIcon = () => (
   </svg>
 );
 
+const ArchiveIcon = ({ size = 24 }: { size?: number }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect width="20" height="5" x="2" y="3" rx="1" />
+    <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" />
+    <path d="M10 12h4" />
+  </svg>
+);
+
+const TrashIcon = ({ size = 16 }: { size?: number }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    <line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" />
+  </svg>
+);
+
 // --- Компонент Карточки ---
 function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => void }) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
@@ -76,7 +91,7 @@ function DroppableContainer({ id, children }: { id: string, children: React.Reac
   return <div ref={setNodeRef} className="flex-1 min-h-[50px] overflow-y-auto pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">{children}</div>;
 }
 
-// --- Иконка Архива для перетаскивания ---
+// --- Иконка Архива для перетаскивания (ВЕКТОР) ---
 function ArchiveDropZone({ isDragging }: { isDragging: boolean }) {
   const { setNodeRef, isOver } = useDroppable({ id: 'archive-zone' });
   
@@ -86,10 +101,10 @@ function ArchiveDropZone({ isDragging }: { isDragging: boolean }) {
       className={`fixed bottom-6 right-6 z-[70] w-20 h-20 rounded-full flex items-center justify-center shadow-2xl border-2 transition-all duration-300 ${
         isDragging ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-50 pointer-events-none'
       } ${
-        isOver ? 'bg-red-500 border-red-300 scale-110' : 'bg-slate-800/80 dark:bg-zinc-100/80 backdrop-blur-xl border-white/20 dark:border-black/20'
+        isOver ? 'bg-red-500 border-red-300 scale-110 text-white' : 'bg-slate-800/80 dark:bg-zinc-100/80 backdrop-blur-xl border-white/20 dark:border-black/20 text-white dark:text-zinc-900'
       }`}
     >
-      <span className="text-4xl pointer-events-none">🗄️</span>
+      <ArchiveIcon size={32} />
     </div>
   );
 }
@@ -115,10 +130,10 @@ function AddCard({ columnId, onAdd }: { columnId: string, onAdd: (colId: string,
     <motion.form onSubmit={handleSubmit} className="mt-2 p-2 bg-white/60 dark:bg-zinc-800/60 backdrop-blur-xl rounded-xl border border-white/80 dark:border-white/10 shadow-sm"
       initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}>
       <textarea value={title} onChange={(e) => setTitle(e.target.value)} 
-        className="w-full p-2 bg-transparent rounded-lg outline-none focus:ring-1 focus:ring-blue-400 text-sm resize-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500" 
+        className="w-full p-2 bg-transparent rounded-lg outline-none focus:ring-1 focus:ring-slate-400 text-sm resize-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500" 
         placeholder="Введите название..." autoFocus />
       <div className="flex gap-2 mt-2">
-        <button type="submit" className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm">Добавить</button>
+        <button type="submit" className="bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-slate-700 dark:hover:bg-white transition-colors shadow-sm">Добавить</button>
         <button type="button" onClick={() => setIsAdding(false)} className="text-slate-500 dark:text-slate-400 px-3 py-1.5 rounded-lg text-sm hover:bg-black/5 dark:hover:bg-white/5 transition-colors">✕</button>
       </div>
     </motion.form>
@@ -149,7 +164,7 @@ function CardModal({ card, onClose, onUpdate, onArchive }: { card: CardType, onC
         
         <div className="flex justify-between items-start mb-6">
           <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
-            className="bg-transparent text-xl font-semibold text-slate-800 dark:text-white outline-none w-full focus:border-b focus:border-blue-400" />
+            className="bg-transparent text-xl font-semibold text-slate-800 dark:text-white outline-none w-full focus:border-b focus:border-slate-400" />
           <button onClick={onClose} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 text-2xl ml-4 leading-none">&times;</button>
         </div>
 
@@ -164,18 +179,21 @@ function CardModal({ card, onClose, onUpdate, onArchive }: { card: CardType, onC
                 classNames={{
                   caption: "flex justify-between items-center py-2", 
                   caption_label: "!text-slate-900 dark:!text-white font-bold text-base",
-                  nav_button: "!text-blue-600 dark:!text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/20 rounded-full p-1 transition-colors",
+                  // ИЗМЕНЕНО: Стрелки стали монохромными
+                  nav_button: "!text-slate-600 dark:!text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full p-1 transition-colors",
                   head_cell: "!text-slate-700 dark:!text-slate-400 text-xs font-bold w-9 text-center",
                   day: "w-9 h-9 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors text-center text-sm font-medium",
-                  day_selected: "bg-blue-600 !text-white hover:bg-blue-600 hover:!text-white font-bold",
-                  day_today: "font-bold !text-blue-600 dark:!text-blue-400 ring-1 ring-blue-600 dark:ring-blue-400 rounded-full",
+                  // ИЗМЕНЕНО: Выбранная дата стала монохромной
+                  day_selected: "bg-slate-800 dark:bg-slate-100 !text-white dark:!text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 hover:!text-white dark:hover:!text-slate-900 font-bold",
+                  // ИЗМЕНЕНО: Сегодняшняя дата стала монохромной
+                  day_today: "font-bold !text-slate-800 dark:!text-slate-100 ring-1 ring-slate-800 dark:ring-slate-100 rounded-full",
                 } as any} 
               />
             </div>
             <div className="w-full flex items-center justify-center gap-3 border-t border-slate-100 dark:border-slate-700 pt-4">
               <label className="text-sm text-slate-600 dark:text-slate-300 font-medium">Время:</label>
               <input type="time" value={time} onChange={(e) => setTime(e.target.value)}
-                className="bg-white/80 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-400 font-medium" />
+                className="bg-white/80 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-slate-400 font-medium" />
             </div>
           </div>
         </div>
@@ -183,13 +201,13 @@ function CardModal({ card, onClose, onUpdate, onArchive }: { card: CardType, onC
         <div className="mb-6">
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Комментарий</h3>
           <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Напишите что-нибудь..."
-            className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-blue-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 resize-none" rows={4} />
+            className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-slate-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 resize-none" rows={4} />
         </div>
 
         <div className="flex gap-3">
-          <button onClick={handleSave} className="w-full bg-blue-600 text-white py-3 rounded-2xl font-medium hover:bg-blue-700 transition-colors shadow-md">Сохранить</button>
-          <button onClick={handleArchive} className="bg-slate-200/60 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 px-4 py-3 rounded-2xl font-medium hover:bg-slate-300/60 dark:hover:bg-slate-600/50 transition-colors flex items-center gap-2" title="В архив">
-            🗄️
+          <button onClick={handleSave} className="w-full bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 py-3 rounded-2xl font-medium hover:bg-slate-700 dark:hover:bg-white transition-colors shadow-md">Сохранить</button>
+          <button onClick={handleArchive} className="bg-slate-200/60 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 px-4 py-3 rounded-2xl font-medium hover:bg-slate-300/60 dark:hover:bg-slate-600/50 transition-colors flex items-center justify-center" title="В архив">
+            <ArchiveIcon size={22} />
           </button>
         </div>
       </motion.div>
@@ -224,7 +242,7 @@ function ArchivePanel({ cards, onClose, onRestore }: { cards: CardType[], onClos
               <motion.div key={card.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8 }}
                 className="bg-white/50 dark:bg-zinc-800/50 p-3 rounded-xl border border-white/80 dark:border-white/10 shadow-sm flex justify-between items-center gap-2">
                 <p className="text-sm text-slate-800 dark:text-slate-100 font-medium truncate flex-1">{card.title}</p>
-                <button onClick={() => onRestore(card.id)} className="text-xs bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-colors font-medium whitespace-nowrap">
+                <button onClick={() => onRestore(card.id)} className="text-xs bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors font-medium whitespace-nowrap">
                   Вернуть
                 </button>
               </motion.div>
@@ -385,9 +403,7 @@ export default function Home() {
   const archivedCards = cards.filter(c => c.is_archived);
 
   return (
-    // ИЗМЕНЕНО: Светлая тема стала монохромной серой
     <main className="bg-slate-100 h-screen flex flex-col overflow-hidden relative bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-zinc-800 dark:via-zinc-900 dark:to-neutral-900 transition-colors">
-      {/* ИЗМЕНЕНО: Орбы стали монохромными для обеих тем */}
       <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-slate-300/40 dark:bg-zinc-700/30 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-slate-400/30 dark:bg-neutral-700/30 rounded-full blur-[120px] pointer-events-none"></div>
 
@@ -395,7 +411,6 @@ export default function Home() {
         <h1 className="text-slate-800 dark:text-white font-semibold text-lg tracking-tight">NOVIKOV PRODUCTION</h1>
         
         <div className="flex items-center gap-2">
-          {/* ИЗМЕНЕНО: Векторные иконки вместо эмодзи */}
           <button 
             onClick={toggleTheme} 
             className="text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 p-2 rounded-xl transition-colors"
@@ -405,7 +420,9 @@ export default function Home() {
           </button>
 
           <button onClick={() => setIsArchiveOpen(true)} className="text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 px-3 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm font-medium">
-            🗄️ Архив <span className="bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded-full text-xs">{archivedCards.length}</span>
+            <ArchiveIcon size={18} /> 
+            <span>Архив</span> 
+            <span className="bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded-full text-xs">{archivedCards.length}</span>
           </button>
         </div>
       </header>
@@ -434,7 +451,7 @@ export default function Home() {
                         className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-full p-1 transition-all duration-200"
                         title="Удалить колонку"
                       >
-                        🗑️
+                        <TrashIcon size={16} />
                       </button>
                     </div>
                   </div>
@@ -466,7 +483,6 @@ export default function Home() {
           </DragOverlay>
         </div>
 
-        {/* Зона сброса для архива */}
         <ArchiveDropZone isDragging={!!activeCard} />
       </DndContext>
 
@@ -492,7 +508,7 @@ export default function Home() {
             <span className="text-sm font-medium">Колонка удалена</span>
             <button 
               onClick={handleUndoDelete} 
-              className="text-blue-300 dark:text-blue-600 font-semibold text-sm hover:text-blue-200 dark:hover:text-blue-700 transition-colors flex items-center gap-1 bg-white/10 dark:bg-black/10 px-3 py-1 rounded-lg"
+              className="text-slate-300 dark:text-slate-700 font-semibold text-sm hover:text-white dark:hover:text-black transition-colors flex items-center gap-1 bg-white/10 dark:bg-black/10 px-3 py-1 rounded-lg"
             >
               Отменить <span className="text-xs w-5 text-center">({undoTimer})</span>
             </button>
