@@ -39,7 +39,7 @@ function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => vo
       animate={{ opacity: isDragging ? 0.4 : 1, scale: 1, y: 0 }} 
       exit={{ opacity: 0, scale: 0.8 }}
       transition={{ type: "spring", stiffness: 300, damping: 25 }} 
-      whileHover={{ y: -2 }}
+      // whileHover удален, чтобы не мешать тачскринам
       onClick={() => onOpen(card)}
       className={`bg-white/50 backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer active:cursor-grabbing border border-white/80 shadow-sm hover:bg-white/80 transition-colors select-none touch-none`}
     >
@@ -56,12 +56,13 @@ function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => vo
   );
 }
 
+// --- Обертка для сброса (добавлен overscroll-contain) ---
 function DroppableContainer({ id, children }: { id: string, children: React.ReactNode }) {
   const { setNodeRef } = useDroppable({ id });
-  return <div ref={setNodeRef} className="flex-1 min-h-[50px] overflow-y-auto pr-1 scroller">{children}</div>;
+  return <div ref={setNodeRef} className="flex-1 min-h-[50px] overflow-y-auto pr-1 scroller overscroll-contain">{children}</div>;
 }
 
-// --- Иконка Архива для перетаскивания (на обычном CSS) ---
+// --- Иконка Архива для перетаскивания ---
 function ArchiveDropZone({ isDragging }: { isDragging: boolean }) {
   const { setNodeRef, isOver } = useDroppable({ id: 'archive-zone' });
   
@@ -260,13 +261,13 @@ export default function Home() {
     }
   }, [undoTimer, pendingDelete]);
 
-  // ИСПРАВЛЕНО: Раздельные сенсоры для мыши и тачскрина
+  // ИСПРАВЛЕНО: Уменьшили задержку для тачскрина
   const sensors = useSensors(
     useSensor(MouseSensor, {
       activationConstraint: { distance: 10 },
     }),
     useSensor(TouchSensor, {
-      activationConstraint: { delay: 200, tolerance: 8 },
+      activationConstraint: { delay: 100, tolerance: 5 },
     })
   );
 
@@ -357,8 +358,9 @@ export default function Home() {
       <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-blue-300/40 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-purple-300/40 rounded-full blur-[120px] pointer-events-none"></div>
 
+      {/* ИЗМЕНЕН ЗАГОЛОВОК */}
       <header className="relative z-10 flex items-center justify-between p-4 bg-white/40 backdrop-blur-2xl border-b border-white/60 shadow-sm">
-        <h1 className="text-slate-800 font-semibold text-lg tracking-tight">Моя Доска</h1>
+        <h1 className="text-slate-800 font-semibold text-lg tracking-tight">NOVIKOV PRODUCTION</h1>
         <button onClick={() => setIsArchiveOpen(true)} className="text-slate-600 hover:bg-black/5 px-3 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm font-medium">
           🗄️ Архив <span className="bg-black/5 px-1.5 py-0.5 rounded-full text-xs">{archivedCards.length}</span>
         </button>
