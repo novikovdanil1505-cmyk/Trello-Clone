@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import {
-  DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, useDroppable, MeasuringStrategy,
+  DndContext, DragOverlay, PointerSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, useDroppable, MeasuringStrategy,
 } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -39,7 +39,6 @@ function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => vo
       animate={{ opacity: isDragging ? 0.4 : 1, scale: 1, y: 0 }} 
       exit={{ opacity: 0, scale: 0.8 }}
       transition={{ type: "spring", stiffness: 300, damping: 25 }} 
-      // whileHover удален, чтобы не мешать тачскринам
       onClick={() => onOpen(card)}
       className={`bg-white/50 backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer active:cursor-grabbing border border-white/80 shadow-sm hover:bg-white/80 transition-colors select-none touch-none`}
     >
@@ -56,10 +55,10 @@ function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => vo
   );
 }
 
-// --- Обертка для сброса (добавлен overscroll-contain) ---
+// --- Обертка для сброса (добавлен touch-pan-y) ---
 function DroppableContainer({ id, children }: { id: string, children: React.ReactNode }) {
   const { setNodeRef } = useDroppable({ id });
-  return <div ref={setNodeRef} className="flex-1 min-h-[50px] overflow-y-auto pr-1 scroller overscroll-contain">{children}</div>;
+  return <div ref={setNodeRef} className="flex-1 min-h-[50px] overflow-y-auto pr-1 scroller overscroll-contain touch-pan-y">{children}</div>;
 }
 
 // --- Иконка Архива для перетаскивания ---
@@ -261,13 +260,10 @@ export default function Home() {
     }
   }, [undoTimer, pendingDelete]);
 
-  // ИСПРАВЛЕНО: Уменьшили задержку для тачскрина
+  // ИСПРАВЛЕНО: Один общий PointerSensor, который работает с тачскринами, если браузер не перехватывает скролл (благодаря touch-pan-y)
   const sensors = useSensors(
-    useSensor(MouseSensor, {
-      activationConstraint: { distance: 10 },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: { delay: 100, tolerance: 5 },
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
     })
   );
 
@@ -358,7 +354,6 @@ export default function Home() {
       <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-blue-300/40 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-purple-300/40 rounded-full blur-[120px] pointer-events-none"></div>
 
-      {/* ИЗМЕНЕН ЗАГОЛОВОК */}
       <header className="relative z-10 flex items-center justify-between p-4 bg-white/40 backdrop-blur-2xl border-b border-white/60 shadow-sm">
         <h1 className="text-slate-800 font-semibold text-lg tracking-tight">NOVIKOV PRODUCTION</h1>
         <button onClick={() => setIsArchiveOpen(true)} className="text-slate-600 hover:bg-black/5 px-3 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm font-medium">
