@@ -135,15 +135,21 @@ function CardModal({ card, onClose, onUpdate, onArchive }: { card: CardType, onC
         <div className="mb-6">
           <div className="flex flex-col gap-4 items-center bg-white/80 p-4 rounded-2xl border border-white/80 shadow-sm">
             <div className="w-full flex justify-center [&_*]:!text-slate-800">
-              <DayPicker mode="single" selected={date} onSelect={setDate} locale={ru}
+                            <DayPicker 
+                mode="single" 
+                selected={date} 
+                onSelect={setDate} 
+                locale={ru}
                 classNames={{
-                  caption: "flex justify-between items-center py-2", caption_label: "!text-slate-900 font-bold text-base",
+                  caption: "flex justify-between items-center py-2", 
+                  caption_label: "!text-slate-900 font-bold text-base",
                   nav_button: "!text-blue-600 hover:bg-blue-50 rounded-full p-1 transition-colors",
                   head_cell: "!text-slate-700 text-xs font-bold w-9 text-center",
                   day: "w-9 h-9 hover:bg-slate-100 rounded-full transition-colors text-center text-sm font-medium",
                   day_selected: "bg-blue-600 !text-white hover:bg-blue-600 hover:!text-white font-bold",
                   day_today: "font-bold !text-blue-600 ring-1 ring-blue-600 rounded-full",
-                }} />
+                } as any} 
+              />
             </div>
             <div className="w-full flex items-center justify-center gap-3 border-t border-slate-100 pt-4">
               <label className="text-sm text-slate-600 font-medium">Время:</label>
