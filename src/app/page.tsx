@@ -10,6 +10,7 @@ import { DayPicker } from "react-day-picker";
 import { ru } from "date-fns/locale";
 import "react-day-picker/dist/style.css";
 import { supabase } from "@/lib/supabaseClient";
+import type { User } from "@supabase/supabase-js";
 
 type CardType = { 
   id: string; 
@@ -64,6 +65,98 @@ const CheckIcon = ({ size = 18 }: { size?: number }) => (
     <polyline points="20 6 9 17 4 12" />
   </svg>
 );
+
+const LogoutIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" />
+  </svg>
+);
+
+// --- ФОРМА АВТОРИЗАЦИИ ---
+function AuthForm() {
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    if (isLogin) {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) setError(error.message);
+    } else {
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) setError(error.message);
+      else setIsLogin(true); // Переключаем на вход после успешной регистрации
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="w-full max-w-md">
+      <motion.div 
+        className="bg-white/60 dark:bg-zinc-900/80 backdrop-blur-2xl rounded-3xl p-8 border border-white/80 dark:border-white/10 shadow-2xl"
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+      >
+        <h1 className="text-2xl font-bold text-slate-800 dark:text-white mb-6 text-center">NOVIKOV PRODUCTION</h1>
+        
+        <div className="flex bg-slate-200/50 dark:bg-slate-800/50 p-1 rounded-xl mb-6">
+          <button 
+            onClick={() => setIsLogin(true)} 
+            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${isLogin ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm" : "text-slate-500 dark:text-slate-400"}`}
+          >
+            Вход
+          </button>
+          <button 
+            onClick={() => setIsLogin(false)} 
+            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${!isLogin ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm" : "text-slate-500 dark:text-slate-400"}`}
+          >
+            Регистрация
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Email</label>
+            <input 
+              type="email" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              required
+              className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-xl outline-none focus:ring-1 focus:ring-slate-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+              placeholder="example@mail.com"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Пароль</label>
+            <input 
+              type="password" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              required
+              className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-xl outline-none focus:ring-1 focus:ring-slate-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+              placeholder="Минимум 6 символов"
+            />
+          </div>
+
+          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="w-full bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 py-3 rounded-xl font-medium hover:bg-slate-700 dark:hover:bg-white transition-colors shadow-md disabled:opacity-50"
+          >
+            {loading ? "Загрузка..." : (isLogin ? "Войти" : "Зарегистрироваться")}
+          </button>
+        </form>
+      </motion.div>
+    </div>
+  );
+}
 
 // --- Компонент Карточки ---
 function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => void }) {
@@ -315,7 +408,6 @@ function ArchivePanel({ cards, onClose, onRestore, onClearAll }: { cards: CardTy
           )}
         </div>
 
-        {/* НОВОЕ: Красная кнопка очистки архива внизу */}
         {cards.length > 0 && (
           <div className="pt-4 mt-4 border-t border-slate-200/60 dark:border-white/10">
             <button 
@@ -333,6 +425,7 @@ function ArchivePanel({ cards, onClose, onRestore, onClearAll }: { cards: CardTy
 
 // --- ГЛАВНАЯ ДОСКА ---
 export default function Home() {
+  const [user, setUser] = useState<User | null>(null);
   const [columns, setColumns] = useState<ColumnType[]>([]);
   const [cards, setCards] = useState<CardType[]>([]);
   const [activeCard, setActiveCard] = useState<CardType | null>(null);
@@ -344,7 +437,22 @@ export default function Home() {
 
   const [isDark, setIsDark] = useState(false);
 
+  // НОВОЕ: Проверка авторизации
   useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!user) return; // Загружаем данные только если пользователь вошел
+
     async function fetchData() {
       const { data: cols } = await supabase.from('columns').select('*').order('position');
       const { data: cardsData } = await supabase.from('cards').select('*').order('position');
@@ -360,7 +468,7 @@ export default function Home() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -396,6 +504,23 @@ export default function Home() {
     useSensor(MouseSensor, { activationConstraint: { distance: 10 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } })
   );
+
+  // НОВОЕ: Функция выхода
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
+  // НОВОЕ: Если пользователь не авторизован - показываем форму входа
+  if (!user) {
+    return (
+      <main className="bg-slate-100 h-screen flex flex-col items-center justify-center overflow-hidden relative bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-zinc-800 dark:via-zinc-900 dark:to-neutral-900 transition-colors">
+        <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-slate-300/40 dark:bg-zinc-700/30 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-slate-400/30 dark:bg-neutral-700/30 rounded-full blur-[120px] pointer-events-none"></div>
+        
+        <AuthForm />
+      </main>
+    );
+  }
 
   function onDragStart(e: DragStartEvent) { 
     if (e.active.data.current?.type === "Card") setActiveCard(e.active.data.current.card); 
@@ -476,17 +601,14 @@ export default function Home() {
     if (error) console.error("Ошибка архивации:", error);
   }
 
-  // НОВАЯ ФУНКЦИЯ: Очистка всего архива
   async function handleClearArchive() {
     if (!confirm("Удалить все карточки из архива безвозвратно?")) return;
 
     const idsToDelete = archivedCards.map(c => c.id);
     if (idsToDelete.length === 0) return;
 
-    // Удаляем из локального состояния
     setCards(prev => prev.filter(c => !c.is_archived));
     
-    // Удаляем из базы данных
     const { error } = await supabase.from('cards').delete().in('id', idsToDelete);
     if (error) {
       console.error("Ошибка очистки архива:", error);
@@ -516,8 +638,17 @@ export default function Home() {
 
           <button onClick={() => setIsArchiveOpen(true)} className="text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 px-3 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm font-medium">
             <ArchiveIcon size={18} /> 
-            <span>Архив</span> 
+            <span className="hidden sm:inline">Архив</span> 
             <span className="bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded-full text-xs">{archivedCards.length}</span>
+          </button>
+
+          {/* НОВОЕ: Кнопка выхода */}
+          <button 
+            onClick={handleLogout} 
+            className="text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 p-2 rounded-xl transition-colors"
+            title="Выйти"
+          >
+            <LogoutIcon />
           </button>
         </div>
       </header>
