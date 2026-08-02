@@ -66,11 +66,10 @@ function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => vo
   );
 }
 
-// --- Обертка для сброса (СКРЫТАЯ ПРОКРУТКА) ---
+// --- Обертка для сброса (УБРАН touch-pan-y) ---
 function DroppableContainer({ id, children }: { id: string, children: React.ReactNode }) {
   const { setNodeRef } = useDroppable({ id });
-  // ИЗМЕНЕНО: Добавлены классы для скрытия скроллбара во всех браузерах
-  return <div ref={setNodeRef} className="flex-1 min-h-[50px] overflow-y-auto pr-1 overscroll-contain touch-pan-y [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">{children}</div>;
+  return <div ref={setNodeRef} className="flex-1 min-h-[50px] overflow-y-auto pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">{children}</div>;
 }
 
 // --- Иконка Архива для перетаскивания ---
@@ -410,7 +409,6 @@ export default function Home() {
         onDragCancel={() => setActiveCard(null)}
         measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
       >
-        {/* ИЗМЕНЕНО: Скрыли скроллбар у горизонтальной прокрутки доски */}
         <div className="relative z-10 flex-1 flex gap-4 p-6 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <AnimatePresence>
             {columns.map((col) => {
