@@ -41,16 +41,16 @@ function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => vo
       transition={{ type: "spring", stiffness: 300, damping: 25 }} 
       whileHover={{ y: -2 }}
       onClick={() => onOpen(card)}
-      className={`bg-white/50 backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer active:cursor-grabbing border border-white/80 shadow-sm hover:bg-white/80 transition-colors select-none touch-none`}
+      className={`bg-white/50 dark:bg-slate-800/50 backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer active:cursor-grabbing border border-white/80 dark:border-white/10 shadow-sm hover:bg-white/80 dark:hover:bg-slate-800/80 transition-colors select-none touch-none`}
     >
-      <p className="text-sm text-slate-800 font-medium mb-1">{card.title}</p>
-      <div className="flex gap-2 mt-2 text-xs text-slate-500">
+      <p className="text-sm text-slate-800 dark:text-slate-100 font-medium mb-1">{card.title}</p>
+      <div className="flex gap-2 mt-2 text-xs text-slate-500 dark:text-slate-400">
         {card.due_date && (
-          <span className="bg-black/5 px-2 py-1 rounded-md flex items-center gap-1">
+          <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">
             📅 {new Date(card.due_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} {card.due_time || ''}
           </span>
         )}
-        {card.comment && <span className="bg-black/5 px-2 py-1 rounded-md flex items-center gap-1">💬</span>}
+        {card.comment && <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">💬</span>}
       </div>
     </motion.div>
   );
@@ -72,7 +72,7 @@ function ArchiveDropZone({ isDragging }: { isDragging: boolean }) {
       className={`fixed bottom-6 right-6 z-[70] w-20 h-20 rounded-full flex items-center justify-center shadow-2xl border-2 transition-all duration-300 ${
         isDragging ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-50 pointer-events-none'
       } ${
-        isOver ? 'bg-red-500 border-red-300 scale-110' : 'bg-slate-800/80 backdrop-blur-xl border-white/20'
+        isOver ? 'bg-red-500 border-red-300 scale-110' : 'bg-slate-800/80 dark:bg-slate-100/80 backdrop-blur-xl border-white/20 dark:border-black/20'
       }`}
     >
       <span className="text-4xl pointer-events-none">🗄️</span>
@@ -91,21 +91,21 @@ function AddCard({ columnId, onAdd }: { columnId: string, onAdd: (colId: string,
 
   if (!isAdding) {
     return (
-      <button onClick={() => setIsAdding(true)} className="text-slate-500 text-sm text-left mt-2 px-3 py-2 hover:bg-black/5 rounded-xl transition-colors w-full flex items-center gap-1.5 font-medium">
+      <button onClick={() => setIsAdding(true)} className="text-slate-500 dark:text-slate-400 text-sm text-left mt-2 px-3 py-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl transition-colors w-full flex items-center gap-1.5 font-medium">
         <span className="text-base leading-none">+</span> Добавить карточку
       </button>
     );
   }
 
   return (
-    <motion.form onSubmit={handleSubmit} className="mt-2 p-2 bg-white/60 backdrop-blur-xl rounded-xl border border-white/80 shadow-sm"
+    <motion.form onSubmit={handleSubmit} className="mt-2 p-2 bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl rounded-xl border border-white/80 dark:border-white/10 shadow-sm"
       initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}>
       <textarea value={title} onChange={(e) => setTitle(e.target.value)} 
-        className="w-full p-2 bg-transparent rounded-lg outline-none focus:ring-1 focus:ring-blue-400 text-sm resize-none text-slate-800 placeholder-slate-400" 
+        className="w-full p-2 bg-transparent rounded-lg outline-none focus:ring-1 focus:ring-blue-400 text-sm resize-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500" 
         placeholder="Введите название..." autoFocus />
       <div className="flex gap-2 mt-2">
         <button type="submit" className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm">Добавить</button>
-        <button type="button" onClick={() => setIsAdding(false)} className="text-slate-500 px-3 py-1.5 rounded-lg text-sm hover:bg-black/5 transition-colors">✕</button>
+        <button type="button" onClick={() => setIsAdding(false)} className="text-slate-500 dark:text-slate-400 px-3 py-1.5 rounded-lg text-sm hover:bg-black/5 dark:hover:bg-white/5 transition-colors">✕</button>
       </div>
     </motion.form>
   );
@@ -127,21 +127,21 @@ function CardModal({ card, onClose, onUpdate, onArchive }: { card: CardType, onC
   const handleArchive = () => { onArchive(card.id); onClose(); };
 
   return (
-    <motion.div className="fixed inset-0 bg-black/20 backdrop-blur-md z-50 flex items-center justify-center p-4"
+    <motion.div className="fixed inset-0 bg-black/20 dark:bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4"
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
-      <motion.div className="bg-white/60 backdrop-blur-2xl w-full max-w-md rounded-3xl p-6 border border-white/80 shadow-2xl overflow-y-auto max-h-[90vh] scroller"
+      <motion.div className="bg-white/60 dark:bg-slate-900/80 backdrop-blur-2xl w-full max-w-md rounded-3xl p-6 border border-white/80 dark:border-white/10 shadow-2xl overflow-y-auto max-h-[90vh] scroller"
         initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }} onClick={(e) => e.stopPropagation()}>
         
         <div className="flex justify-between items-start mb-6">
           <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
-            className="bg-transparent text-xl font-semibold text-slate-800 outline-none w-full focus:border-b focus:border-blue-400" />
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl ml-4 leading-none">&times;</button>
+            className="bg-transparent text-xl font-semibold text-slate-800 dark:text-white outline-none w-full focus:border-b focus:border-blue-400" />
+          <button onClick={onClose} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 text-2xl ml-4 leading-none">&times;</button>
         </div>
 
         <div className="mb-6">
-          <div className="flex flex-col gap-4 items-center bg-white/80 p-4 rounded-2xl border border-white/80 shadow-sm">
-            <div className="w-full flex justify-center [&_*]:!text-slate-800">
+          <div className="flex flex-col gap-4 items-center bg-white/80 dark:bg-slate-800/50 p-4 rounded-2xl border border-white/80 dark:border-white/10 shadow-sm">
+            <div className="w-full flex justify-center [&_*]:!text-slate-800 dark:[&_*]:!text-slate-200">
               <DayPicker 
                 mode="single" 
                 selected={date} 
@@ -149,32 +149,32 @@ function CardModal({ card, onClose, onUpdate, onArchive }: { card: CardType, onC
                 locale={ru}
                 classNames={{
                   caption: "flex justify-between items-center py-2", 
-                  caption_label: "!text-slate-900 font-bold text-base",
-                  nav_button: "!text-blue-600 hover:bg-blue-50 rounded-full p-1 transition-colors",
-                  head_cell: "!text-slate-700 text-xs font-bold w-9 text-center",
-                  day: "w-9 h-9 hover:bg-slate-100 rounded-full transition-colors text-center text-sm font-medium",
+                  caption_label: "!text-slate-900 dark:!text-white font-bold text-base",
+                  nav_button: "!text-blue-600 dark:!text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/20 rounded-full p-1 transition-colors",
+                  head_cell: "!text-slate-700 dark:!text-slate-400 text-xs font-bold w-9 text-center",
+                  day: "w-9 h-9 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors text-center text-sm font-medium",
                   day_selected: "bg-blue-600 !text-white hover:bg-blue-600 hover:!text-white font-bold",
-                  day_today: "font-bold !text-blue-600 ring-1 ring-blue-600 rounded-full",
+                  day_today: "font-bold !text-blue-600 dark:!text-blue-400 ring-1 ring-blue-600 dark:ring-blue-400 rounded-full",
                 } as any} 
               />
             </div>
-            <div className="w-full flex items-center justify-center gap-3 border-t border-slate-100 pt-4">
-              <label className="text-sm text-slate-600 font-medium">Время:</label>
+            <div className="w-full flex items-center justify-center gap-3 border-t border-slate-100 dark:border-slate-700 pt-4">
+              <label className="text-sm text-slate-600 dark:text-slate-300 font-medium">Время:</label>
               <input type="time" value={time} onChange={(e) => setTime(e.target.value)}
-                className="bg-white/80 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-400 font-medium" />
+                className="bg-white/80 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-400 font-medium" />
             </div>
           </div>
         </div>
 
         <div className="mb-6">
-          <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">Комментарий</h3>
+          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Комментарий</h3>
           <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Напишите что-нибудь..."
-            className="w-full p-3 bg-white/40 border border-white/60 rounded-2xl outline-none focus:ring-1 focus:ring-blue-400 text-sm text-slate-800 placeholder-slate-400 resize-none" rows={4} />
+            className="w-full p-3 bg-white/40 dark:bg-slate-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-blue-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 resize-none" rows={4} />
         </div>
 
         <div className="flex gap-3">
           <button onClick={handleSave} className="w-full bg-blue-600 text-white py-3 rounded-2xl font-medium hover:bg-blue-700 transition-colors shadow-md">Сохранить</button>
-          <button onClick={handleArchive} className="bg-slate-200/60 text-slate-600 px-4 py-3 rounded-2xl font-medium hover:bg-slate-300/60 transition-colors flex items-center gap-2" title="В архив">
+          <button onClick={handleArchive} className="bg-slate-200/60 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 px-4 py-3 rounded-2xl font-medium hover:bg-slate-300/60 dark:hover:bg-slate-600/50 transition-colors flex items-center gap-2" title="В архив">
             🗄️
           </button>
         </div>
@@ -187,20 +187,20 @@ function CardModal({ card, onClose, onUpdate, onArchive }: { card: CardType, onC
 function ArchivePanel({ cards, onClose, onRestore }: { cards: CardType[], onClose: () => void, onRestore: (id: string) => void }) {
   return (
     <motion.div className="fixed inset-0 z-50 flex justify-end" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
-      <div className="absolute inset-0 bg-black/20 backdrop-blur-sm"></div>
+      <div className="absolute inset-0 bg-black/20 dark:bg-black/60 backdrop-blur-sm"></div>
       <motion.div 
-        className="relative bg-white/60 backdrop-blur-2xl w-full max-w-md h-full p-6 border-l border-white/80 shadow-2xl overflow-y-auto scroller"
+        className="relative bg-white/60 dark:bg-slate-900/80 backdrop-blur-2xl w-full max-w-md h-full p-6 border-l border-white/80 dark:border-white/10 shadow-2xl overflow-y-auto scroller"
         initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-slate-800 font-semibold text-xl">Архив</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
+          <h2 className="text-slate-800 dark:text-white font-semibold text-xl">Архив</h2>
+          <button onClick={onClose} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 text-2xl leading-none">&times;</button>
         </div>
         
         {cards.length === 0 ? (
-          <div className="text-center mt-20 text-slate-500">
+          <div className="text-center mt-20 text-slate-500 dark:text-slate-400">
             <p className="text-5xl mb-4">🗑️</p>
             <p>Архив пуст</p>
           </div>
@@ -208,9 +208,9 @@ function ArchivePanel({ cards, onClose, onRestore }: { cards: CardType[], onClos
           <div className="space-y-3">
             {cards.map(card => (
               <motion.div key={card.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8 }}
-                className="bg-white/50 p-3 rounded-xl border border-white/80 shadow-sm flex justify-between items-center gap-2">
-                <p className="text-sm text-slate-800 font-medium truncate flex-1">{card.title}</p>
-                <button onClick={() => onRestore(card.id)} className="text-xs bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-200 transition-colors font-medium whitespace-nowrap">
+                className="bg-white/50 dark:bg-slate-800/50 p-3 rounded-xl border border-white/80 dark:border-white/10 shadow-sm flex justify-between items-center gap-2">
+                <p className="text-sm text-slate-800 dark:text-slate-100 font-medium truncate flex-1">{card.title}</p>
+                <button onClick={() => onRestore(card.id)} className="text-xs bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-colors font-medium whitespace-nowrap">
                   Вернуть
                 </button>
               </motion.div>
@@ -233,6 +233,9 @@ export default function Home() {
   const [pendingDelete, setPendingDelete] = useState<ColumnType | null>(null);
   const [undoTimer, setUndoTimer] = useState(0);
 
+  // НОВОЕ: Состояние темной темы
+  const [isDark, setIsDark] = useState(false);
+
   useEffect(() => {
     async function fetchData() {
       const { data: cols } = await supabase.from('columns').select('*').order('position');
@@ -251,6 +254,28 @@ export default function Home() {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
+  // НОВОЕ: Загрузка темы из localStorage при первом запуске
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+      setIsDark(true);
+    }
+  }, []);
+
+  // НОВОЕ: Функция переключения темы
+  const toggleTheme = () => {
+    if (isDark) {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+      setIsDark(false);
+    } else {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+      setIsDark(true);
+    }
+  };
+
   useEffect(() => {
     if (undoTimer > 0) {
       const timer = setTimeout(() => setUndoTimer(prev => prev - 1), 1000);
@@ -261,14 +286,9 @@ export default function Home() {
     }
   }, [undoTimer, pendingDelete]);
 
-  // Сенсоры из варианта "Fix mobile drag and drop"
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 5 },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: { delay: 250, tolerance: 5 },
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } })
   );
 
   function onDragStart(e: DragStartEvent) { 
@@ -354,15 +374,27 @@ export default function Home() {
   const archivedCards = cards.filter(c => c.is_archived);
 
   return (
-    <main className="bg-slate-100 h-screen flex flex-col overflow-hidden relative bg-gradient-to-br from-sky-100 via-purple-50 to-pink-100">
-      <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-blue-300/40 rounded-full blur-[120px] pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-purple-300/40 rounded-full blur-[120px] pointer-events-none"></div>
+    <main className="bg-slate-100 dark:bg-slate-950 h-screen flex flex-col overflow-hidden relative bg-gradient-to-br from-sky-100 via-purple-50 to-pink-100 dark:from-slate-900 dark:via-slate-950 dark:to-black transition-colors">
+      <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-blue-300/40 dark:bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-purple-300/40 dark:bg-purple-600/20 rounded-full blur-[120px] pointer-events-none"></div>
 
-      <header className="relative z-10 flex items-center justify-between p-4 bg-white/40 backdrop-blur-2xl border-b border-white/60 shadow-sm">
-        <h1 className="text-slate-800 font-semibold text-lg tracking-tight">NOVIKOV PRODUCTION</h1>
-        <button onClick={() => setIsArchiveOpen(true)} className="text-slate-600 hover:bg-black/5 px-3 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm font-medium">
-          🗄️ Архив <span className="bg-black/5 px-1.5 py-0.5 rounded-full text-xs">{archivedCards.length}</span>
-        </button>
+      <header className="relative z-10 flex items-center justify-between p-4 bg-white/40 dark:bg-white/5 backdrop-blur-2xl border-b border-white/60 dark:border-white/10 shadow-sm">
+        <h1 className="text-slate-800 dark:text-white font-semibold text-lg tracking-tight">NOVIKOV PRODUCTION</h1>
+        
+        <div className="flex items-center gap-2">
+          {/* НОВОЕ: Кнопка переключения темы */}
+          <button 
+            onClick={toggleTheme} 
+            className="text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 p-2 rounded-xl transition-colors"
+            title="Сменить тему"
+          >
+            {isDark ? "☀️" : "🌙"}
+          </button>
+
+          <button onClick={() => setIsArchiveOpen(true)} className="text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 px-3 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm font-medium">
+            🗄️ Архив <span className="bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded-full text-xs">{archivedCards.length}</span>
+          </button>
+        </div>
       </header>
 
       <DndContext 
@@ -378,15 +410,15 @@ export default function Home() {
               const colCards = visibleCards.filter((c) => c.column_id === col.id);
               return (
                 <motion.div key={col.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
-                  className="group bg-white/40 backdrop-blur-2xl w-80 rounded-3xl p-3 flex flex-col max-h-full flex-shrink-0 border border-white/60 shadow-lg">
+                  className="group bg-white/40 dark:bg-white/5 backdrop-blur-2xl w-80 rounded-3xl p-3 flex flex-col max-h-full flex-shrink-0 border border-white/60 dark:border-white/10 shadow-lg">
                   
                   <div className="flex items-center justify-between mb-3 px-3 pt-1">
-                    <h2 className="font-semibold text-slate-700 text-sm uppercase tracking-wider">{col.title}</h2>
+                    <h2 className="font-semibold text-slate-700 dark:text-slate-200 text-sm uppercase tracking-wider">{col.title}</h2>
                     <div className="flex items-center gap-1">
-                      <span className="bg-black/5 text-slate-600 text-xs px-2 py-1 rounded-full font-medium">{colCards.length}</span>
+                      <span className="bg-black/5 dark:bg-white/10 text-slate-600 dark:text-slate-300 text-xs px-2 py-1 rounded-full font-medium">{colCards.length}</span>
                       <button 
                         onClick={() => handleDeleteColumn(col)} 
-                        className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full p-1 transition-all duration-200"
+                        className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-full p-1 transition-all duration-200"
                         title="Удалить колонку"
                       >
                         🗑️
@@ -407,15 +439,15 @@ export default function Home() {
           </AnimatePresence>
 
           <div className="w-72 flex-shrink-0">
-            <button onClick={handleAddColumn} className="bg-white/30 backdrop-blur-xl border border-dashed border-slate-300 hover:border-slate-400 hover:bg-white/50 text-slate-600 hover:text-slate-800 font-medium w-full py-3 rounded-3xl flex items-center justify-center gap-2 transition-all shadow-sm">
+            <button onClick={handleAddColumn} className="bg-white/30 dark:bg-white/5 backdrop-blur-xl border border-dashed border-slate-300 dark:border-white/10 hover:border-slate-400 dark:hover:border-white/30 hover:bg-white/50 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white font-medium w-full py-3 rounded-3xl flex items-center justify-center gap-2 transition-all shadow-sm">
               + Добавить колонку
             </button>
           </div>
 
           <DragOverlay>
             {activeCard && (
-              <div className="bg-white/80 backdrop-blur-2xl p-3 rounded-2xl shadow-2xl w-72 cursor-grabbing border border-white rotate-3">
-                <p className="text-sm text-slate-800 font-medium">{activeCard.title}</p>
+              <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-2xl p-3 rounded-2xl shadow-2xl w-72 cursor-grabbing border border-white dark:border-white/10 rotate-3">
+                <p className="text-sm text-slate-800 dark:text-slate-100 font-medium">{activeCard.title}</p>
               </div>
             )}
           </DragOverlay>
@@ -440,14 +472,14 @@ export default function Home() {
       <AnimatePresence>
         {pendingDelete && (
           <motion.div 
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-slate-800/80 backdrop-blur-xl text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-4 border border-white/10"
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-slate-800/80 dark:bg-slate-100/80 backdrop-blur-xl text-white dark:text-slate-900 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-4 border border-white/10 dark:border-black/10"
             initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
           >
             <span className="text-sm font-medium">Колонка удалена</span>
             <button 
               onClick={handleUndoDelete} 
-              className="text-blue-300 font-semibold text-sm hover:text-blue-200 transition-colors flex items-center gap-1 bg-white/10 px-3 py-1 rounded-lg"
+              className="text-blue-300 dark:text-blue-600 font-semibold text-sm hover:text-blue-200 dark:hover:text-blue-700 transition-colors flex items-center gap-1 bg-white/10 dark:bg-black/10 px-3 py-1 rounded-lg"
             >
               Отменить <span className="text-xs w-5 text-center">({undoTimer})</span>
             </button>
