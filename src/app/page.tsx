@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import {
-  DndContext, DragOverlay, PointerSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, useDroppable, MeasuringStrategy,
+  DndContext, DragOverlay, PointerSensor, TouchSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, useDroppable, MeasuringStrategy,
 } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -39,6 +39,7 @@ function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => vo
       animate={{ opacity: isDragging ? 0.4 : 1, scale: 1, y: 0 }} 
       exit={{ opacity: 0, scale: 0.8 }}
       transition={{ type: "spring", stiffness: 300, damping: 25 }} 
+      whileHover={{ y: -2 }}
       onClick={() => onOpen(card)}
       className={`bg-white/50 backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer active:cursor-grabbing border border-white/80 shadow-sm hover:bg-white/80 transition-colors select-none touch-none`}
     >
@@ -55,10 +56,10 @@ function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => vo
   );
 }
 
-// --- Обертка для сброса (добавлен touch-pan-y) ---
+// --- Обертка для сброса ---
 function DroppableContainer({ id, children }: { id: string, children: React.ReactNode }) {
   const { setNodeRef } = useDroppable({ id });
-  return <div ref={setNodeRef} className="flex-1 min-h-[50px] overflow-y-auto pr-1 scroller overscroll-contain touch-pan-y">{children}</div>;
+  return <div ref={setNodeRef} className="flex-1 min-h-[50px] overflow-y-auto pr-1 scroller">{children}</div>;
 }
 
 // --- Иконка Архива для перетаскивания ---
@@ -260,10 +261,13 @@ export default function Home() {
     }
   }, [undoTimer, pendingDelete]);
 
-  // ИСПРАВЛЕНО: Один общий PointerSensor, который работает с тачскринами, если браузер не перехватывает скролл (благодаря touch-pan-y)
+  // Сенсоры из варианта "Fix mobile drag and drop"
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
+      activationConstraint: { distance: 5 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 5 },
     })
   );
 
