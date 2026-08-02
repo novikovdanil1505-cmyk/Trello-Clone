@@ -203,7 +203,7 @@ function CardModal({ card, onClose, onUpdate, onArchive }: { card: CardType, onC
           <button onClick={onClose} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 text-2xl ml-4 leading-none">&times;</button>
         </div>
 
-        {/* НОВОЕ: Блок данных клиента */}
+        {/* Блок данных клиента */}
         <div className="mb-6">
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Данные клиента</h3>
           <div className="space-y-3">
@@ -279,12 +279,12 @@ function CardModal({ card, onClose, onUpdate, onArchive }: { card: CardType, onC
 }
 
 // --- ПАНЕЛЬ АРХИВА ---
-function ArchivePanel({ cards, onClose, onRestore }: { cards: CardType[], onClose: () => void, onRestore: (id: string) => void }) {
+function ArchivePanel({ cards, onClose, onRestore, onClearAll }: { cards: CardType[], onClose: () => void, onRestore: (id: string) => void, onClearAll: () => void }) {
   return (
     <motion.div className="fixed inset-0 z-50 flex justify-end" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
       <div className="absolute inset-0 bg-black/20 dark:bg-black/60 backdrop-blur-sm"></div>
       <motion.div 
-        className="relative bg-white/60 dark:bg-zinc-900/80 backdrop-blur-2xl w-full max-w-md h-full p-6 border-l border-white/80 dark:border-white/10 shadow-2xl overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        className="relative bg-white/60 dark:bg-zinc-900/80 backdrop-blur-2xl w-full max-w-md h-full p-6 border-l border-white/80 dark:border-white/10 shadow-2xl flex flex-col"
         initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         onClick={(e) => e.stopPropagation()}
@@ -294,22 +294,36 @@ function ArchivePanel({ cards, onClose, onRestore }: { cards: CardType[], onClos
           <button onClick={onClose} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 text-2xl leading-none">&times;</button>
         </div>
         
-        {cards.length === 0 ? (
-          <div className="text-center mt-20 text-slate-500 dark:text-slate-400">
-            <p className="text-5xl mb-4">🗑️</p>
-            <p>Архив пуст</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {cards.map(card => (
-              <motion.div key={card.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8 }}
-                className="bg-white/50 dark:bg-zinc-800/50 p-3 rounded-xl border border-white/80 dark:border-white/10 shadow-sm flex justify-between items-center gap-2">
-                <p className="text-sm text-slate-800 dark:text-slate-100 font-medium truncate flex-1">{card.title}</p>
-                <button onClick={() => onRestore(card.id)} className="text-xs bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors font-medium whitespace-nowrap">
-                  Вернуть
-                </button>
-              </motion.div>
-            ))}
+        <div className="flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          {cards.length === 0 ? (
+            <div className="text-center mt-20 text-slate-500 dark:text-slate-400">
+              <p className="text-5xl mb-4">🗑️</p>
+              <p>Архив пуст</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {cards.map(card => (
+                <motion.div key={card.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8 }}
+                  className="bg-white/50 dark:bg-zinc-800/50 p-3 rounded-xl border border-white/80 dark:border-white/10 shadow-sm flex justify-between items-center gap-2">
+                  <p className="text-sm text-slate-800 dark:text-slate-100 font-medium truncate flex-1">{card.title}</p>
+                  <button onClick={() => onRestore(card.id)} className="text-xs bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors font-medium whitespace-nowrap">
+                    Вернуть
+                  </button>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* НОВОЕ: Красная кнопка очистки архива внизу */}
+        {cards.length > 0 && (
+          <div className="pt-4 mt-4 border-t border-slate-200/60 dark:border-white/10">
+            <button 
+              onClick={onClearAll} 
+              className="w-full bg-red-500/90 hover:bg-red-500 text-white py-2.5 rounded-xl text-sm font-medium transition-colors shadow-sm flex items-center justify-center gap-2"
+            >
+              <TrashIcon size={16} /> Очистить архив
+            </button>
           </div>
         )}
       </motion.div>
@@ -462,6 +476,24 @@ export default function Home() {
     if (error) console.error("Ошибка архивации:", error);
   }
 
+  // НОВАЯ ФУНКЦИЯ: Очистка всего архива
+  async function handleClearArchive() {
+    if (!confirm("Удалить все карточки из архива безвозвратно?")) return;
+
+    const idsToDelete = archivedCards.map(c => c.id);
+    if (idsToDelete.length === 0) return;
+
+    // Удаляем из локального состояния
+    setCards(prev => prev.filter(c => !c.is_archived));
+    
+    // Удаляем из базы данных
+    const { error } = await supabase.from('cards').delete().in('id', idsToDelete);
+    if (error) {
+      console.error("Ошибка очистки архива:", error);
+      alert("Не удалось очистить архив. Проверьте права доступа (RLS) в Supabase.");
+    }
+  }
+
   const visibleCards = cards.filter(c => !c.is_archived);
   const archivedCards = cards.filter(c => c.is_archived);
 
@@ -557,7 +589,12 @@ export default function Home() {
 
       <AnimatePresence>
         {isArchiveOpen && (
-          <ArchivePanel cards={archivedCards} onClose={() => setIsArchiveOpen(false)} onRestore={(id) => handleToggleArchive(id, false)} />
+          <ArchivePanel 
+            cards={archivedCards} 
+            onClose={() => setIsArchiveOpen(false)} 
+            onRestore={(id) => handleToggleArchive(id, false)} 
+            onClearAll={handleClearArchive} 
+          />
         )}
       </AnimatePresence>
 
