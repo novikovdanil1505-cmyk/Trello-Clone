@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import {
-  DndContext, DragOverlay, PointerSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, useDroppable, MeasuringStrategy,
+  DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, useDroppable, MeasuringStrategy,
 } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -32,6 +32,8 @@ function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => vo
   return (
     <motion.div
       ref={setNodeRef} 
+      {...attributes} 
+      {...listeners} 
       style={style} 
       layout
       initial={{ opacity: 0, scale: 0.8, y: 10 }} 
@@ -39,34 +41,22 @@ function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => vo
       exit={{ opacity: 0, scale: 0.8 }}
       transition={{ type: "spring", stiffness: 300, damping: 25 }} 
       onClick={() => onOpen(card)}
-      className={`bg-white/50 dark:bg-slate-800/50 backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer border border-white/80 dark:border-white/10 shadow-sm hover:bg-white/80 dark:hover:bg-slate-800/80 transition-colors flex items-start gap-2`}
+      className={`bg-white/50 dark:bg-slate-800/50 backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer active:cursor-grabbing border border-white/80 dark:border-white/10 shadow-sm hover:bg-white/80 dark:hover:bg-slate-800/80 transition-colors select-none`}
     >
-      {/* Ручка для перетаскивания */}
-      <button 
-        {...attributes} 
-        {...listeners}
-        className="cursor-grab active:cursor-grabbing touch-none text-slate-300 hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-400 mt-0.5 select-none"
-        title="Перетащить"
-      >
-        ⋮⋮
-      </button>
-      
-      <div className="flex-1">
-        <p className="text-sm text-slate-800 dark:text-slate-100 font-medium mb-1">{card.title}</p>
-        <div className="flex gap-2 mt-2 text-xs text-slate-500 dark:text-slate-400">
-          {card.due_date && (
-            <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">
-              📅 {new Date(card.due_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} {card.due_time || ''}
-            </span>
-          )}
-          {card.comment && <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">💬</span>}
-        </div>
+      <p className="text-sm text-slate-800 dark:text-slate-100 font-medium mb-1">{card.title}</p>
+      <div className="flex gap-2 mt-2 text-xs text-slate-500 dark:text-slate-400">
+        {card.due_date && (
+          <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">
+            📅 {new Date(card.due_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} {card.due_time || ''}
+          </span>
+        )}
+        {card.comment && <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">💬</span>}
       </div>
     </motion.div>
   );
 }
 
-// --- Обертка для сброса (УБРАН touch-pan-y) ---
+// --- Обертка для сброса (СКРЫТАЯ ПРОКРУТКА) ---
 function DroppableContainer({ id, children }: { id: string, children: React.ReactNode }) {
   const { setNodeRef } = useDroppable({ id });
   return <div ref={setNodeRef} className="flex-1 min-h-[50px] overflow-y-auto pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">{children}</div>;
@@ -293,8 +283,10 @@ export default function Home() {
     }
   }, [undoTimer, pendingDelete]);
 
+  // Сенсоры: мышь с дистанцией 10px, тач с задержкой 200мс
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+    useSensor(MouseSensor, { activationConstraint: { distance: 10 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } })
   );
 
   function onDragStart(e: DragStartEvent) { 
