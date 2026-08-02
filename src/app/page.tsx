@@ -179,14 +179,13 @@ function CardModal({ card, onClose, onUpdate, onArchive }: { card: CardType, onC
                 classNames={{
                   caption: "flex justify-between items-center py-2", 
                   caption_label: "!text-slate-900 dark:!text-white font-bold text-base",
-                  // ИЗМЕНЕНО: Стрелки стали монохромными
-                  nav_button: "!text-slate-600 dark:!text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full p-1 transition-colors",
+                  // ИЗМЕНЕНО: Стрелки стали красными
+                  nav_button: "!text-red-500 dark:!text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-full p-1 transition-colors",
                   head_cell: "!text-slate-700 dark:!text-slate-400 text-xs font-bold w-9 text-center",
                   day: "w-9 h-9 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors text-center text-sm font-medium",
-                  // ИЗМЕНЕНО: Выбранная дата стала монохромной
                   day_selected: "bg-slate-800 dark:bg-slate-100 !text-white dark:!text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 hover:!text-white dark:hover:!text-slate-900 font-bold",
-                  // ИЗМЕНЕНО: Сегодняшняя дата стала монохромной
-                  day_today: "font-bold !text-slate-800 dark:!text-slate-100 ring-1 ring-slate-800 dark:ring-slate-100 rounded-full",
+                  // ИЗМЕНЕНО: Обводка сегодняшней даты стала красной
+                  day_today: "font-bold !text-red-500 dark:!text-red-400 ring-1 ring-red-500 dark:ring-red-400 rounded-full",
                 } as any} 
               />
             </div>
