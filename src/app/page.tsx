@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import {
-  DndContext, DragOverlay, PointerSensor, TouchSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, useDroppable, MeasuringStrategy,
+  DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, useDroppable, MeasuringStrategy,
 } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -33,7 +33,8 @@ function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => vo
       ref={setNodeRef} 
       {...attributes} 
       {...listeners} 
-      style={{ transform: CSS.Transform.toString(transform), transition, touchAction: "none" }} 
+      // ИЗМЕНЕНО: touchAction: "pan-y" (разрешает прокрутку по вертикали, запрещает по горизонтали)
+      style={{ transform: CSS.Transform.toString(transform), transition, touchAction: "pan-y" }} 
       layout
       initial={{ opacity: 0, scale: 0.8, y: 10 }} 
       animate={{ opacity: isDragging ? 0.4 : 1, scale: 1, y: 0 }} 
@@ -41,7 +42,8 @@ function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => vo
       transition={{ type: "spring", stiffness: 300, damping: 25 }} 
       whileHover={{ y: -2 }}
       onClick={() => onOpen(card)}
-      className={`bg-white/50 dark:bg-slate-800/50 backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer active:cursor-grabbing border border-white/80 dark:border-white/10 shadow-sm hover:bg-white/80 dark:hover:bg-slate-800/80 transition-colors select-none touch-none`}
+      // ИЗМЕНЕНО: убран класс touch-none
+      className={`bg-white/50 dark:bg-slate-800/50 backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer active:cursor-grabbing border border-white/80 dark:border-white/10 shadow-sm hover:bg-white/80 dark:hover:bg-slate-800/80 transition-colors select-none`}
     >
       <p className="text-sm text-slate-800 dark:text-slate-100 font-medium mb-1">{card.title}</p>
       <div className="flex gap-2 mt-2 text-xs text-slate-500 dark:text-slate-400">
@@ -59,7 +61,7 @@ function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => vo
 // --- Обертка для сброса ---
 function DroppableContainer({ id, children }: { id: string, children: React.ReactNode }) {
   const { setNodeRef } = useDroppable({ id });
-  return <div ref={setNodeRef} className="flex-1 min-h-[50px] overflow-y-auto pr-1 scroller">{children}</div>;
+  return <div ref={setNodeRef} className="flex-1 min-h-[50px] overflow-y-auto pr-1 scroller overscroll-contain touch-pan-y">{children}</div>;
 }
 
 // --- Иконка Архива для перетаскивания ---
@@ -233,7 +235,6 @@ export default function Home() {
   const [pendingDelete, setPendingDelete] = useState<ColumnType | null>(null);
   const [undoTimer, setUndoTimer] = useState(0);
 
-  // НОВОЕ: Состояние темной темы
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
@@ -254,7 +255,6 @@ export default function Home() {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  // НОВОЕ: Загрузка темы из localStorage при первом запуске
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'dark') {
@@ -263,7 +263,6 @@ export default function Home() {
     }
   }, []);
 
-  // НОВОЕ: Функция переключения темы
   const toggleTheme = () => {
     if (isDark) {
       document.documentElement.classList.remove('dark');
@@ -286,9 +285,10 @@ export default function Home() {
     }
   }, [undoTimer, pendingDelete]);
 
+  // ИЗМЕНЕНО: MouseSensor для ПК, TouchSensor для телефона (с задержкой 200мс)
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } })
+    useSensor(MouseSensor, { activationConstraint: { distance: 10 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } })
   );
 
   function onDragStart(e: DragStartEvent) { 
@@ -382,7 +382,6 @@ export default function Home() {
         <h1 className="text-slate-800 dark:text-white font-semibold text-lg tracking-tight">NOVIKOV PRODUCTION</h1>
         
         <div className="flex items-center gap-2">
-          {/* НОВОЕ: Кнопка переключения темы */}
           <button 
             onClick={toggleTheme} 
             className="text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 p-2 rounded-xl transition-colors"
