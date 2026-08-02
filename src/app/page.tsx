@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import {
-  DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, useDroppable, MeasuringStrategy,
+  DndContext, DragOverlay, PointerSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, useDroppable, MeasuringStrategy,
 } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -27,32 +27,40 @@ function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => vo
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: card.id, data: { type: "Card", card },
   });
+  const style = { transform: CSS.Transform.toString(transform), transition };
 
   return (
     <motion.div
       ref={setNodeRef} 
-      {...attributes} 
-      {...listeners} 
-      // ИЗМЕНЕНО: touchAction: "pan-y" (разрешает прокрутку по вертикали, запрещает по горизонтали)
-      style={{ transform: CSS.Transform.toString(transform), transition, touchAction: "pan-y" }} 
+      style={style} 
       layout
       initial={{ opacity: 0, scale: 0.8, y: 10 }} 
       animate={{ opacity: isDragging ? 0.4 : 1, scale: 1, y: 0 }} 
       exit={{ opacity: 0, scale: 0.8 }}
       transition={{ type: "spring", stiffness: 300, damping: 25 }} 
-      whileHover={{ y: -2 }}
       onClick={() => onOpen(card)}
-      // ИЗМЕНЕНО: убран класс touch-none
-      className={`bg-white/50 dark:bg-slate-800/50 backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer active:cursor-grabbing border border-white/80 dark:border-white/10 shadow-sm hover:bg-white/80 dark:hover:bg-slate-800/80 transition-colors select-none`}
+      className={`bg-white/50 dark:bg-slate-800/50 backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer border border-white/80 dark:border-white/10 shadow-sm hover:bg-white/80 dark:hover:bg-slate-800/80 transition-colors flex items-start gap-2`}
     >
-      <p className="text-sm text-slate-800 dark:text-slate-100 font-medium mb-1">{card.title}</p>
-      <div className="flex gap-2 mt-2 text-xs text-slate-500 dark:text-slate-400">
-        {card.due_date && (
-          <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">
-            📅 {new Date(card.due_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} {card.due_time || ''}
-          </span>
-        )}
-        {card.comment && <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">💬</span>}
+      {/* РУЧКА ДЛЯ ПЕРЕТАСКИВАНИЯ */}
+      <button 
+        {...attributes} 
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing touch-none text-slate-300 hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-400 mt-0.5 select-none"
+        title="Перетащить"
+      >
+        ⋮⋮
+      </button>
+      
+      <div className="flex-1">
+        <p className="text-sm text-slate-800 dark:text-slate-100 font-medium mb-1">{card.title}</p>
+        <div className="flex gap-2 mt-2 text-xs text-slate-500 dark:text-slate-400">
+          {card.due_date && (
+            <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">
+              📅 {new Date(card.due_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} {card.due_time || ''}
+            </span>
+          )}
+          {card.comment && <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">💬</span>}
+        </div>
       </div>
     </motion.div>
   );
@@ -61,7 +69,7 @@ function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => vo
 // --- Обертка для сброса ---
 function DroppableContainer({ id, children }: { id: string, children: React.ReactNode }) {
   const { setNodeRef } = useDroppable({ id });
-  return <div ref={setNodeRef} className="flex-1 min-h-[50px] overflow-y-auto pr-1 scroller overscroll-contain touch-pan-y">{children}</div>;
+  return <div ref={setNodeRef} className="flex-1 min-h-[50px] overflow-y-auto pr-1 scroller overscroll-contain">{children}</div>;
 }
 
 // --- Иконка Архива для перетаскивания ---
@@ -285,10 +293,9 @@ export default function Home() {
     }
   }, [undoTimer, pendingDelete]);
 
-  // ИЗМЕНЕНО: MouseSensor для ПК, TouchSensor для телефона (с задержкой 200мс)
+  // ИЗМЕНЕНО: Возвращаем PointerSensor, так как теперь мы используем ручку перетаскивания (drag handle)
   const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 10 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } })
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
   function onDragStart(e: DragStartEvent) { 
