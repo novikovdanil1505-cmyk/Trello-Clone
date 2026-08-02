@@ -41,7 +41,7 @@ function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => vo
       onClick={() => onOpen(card)}
       className={`bg-white/50 dark:bg-slate-800/50 backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer border border-white/80 dark:border-white/10 shadow-sm hover:bg-white/80 dark:hover:bg-slate-800/80 transition-colors flex items-start gap-2`}
     >
-      {/* РУЧКА ДЛЯ ПЕРЕТАСКИВАНИЯ */}
+      {/* Ручка для перетаскивания */}
       <button 
         {...attributes} 
         {...listeners}
@@ -66,10 +66,11 @@ function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => vo
   );
 }
 
-// --- Обертка для сброса ---
+// --- Обертка для сброса (СКРЫТАЯ ПРОКРУТКА) ---
 function DroppableContainer({ id, children }: { id: string, children: React.ReactNode }) {
   const { setNodeRef } = useDroppable({ id });
-  return <div ref={setNodeRef} className="flex-1 min-h-[50px] overflow-y-auto pr-1 scroller overscroll-contain">{children}</div>;
+  // ИЗМЕНЕНО: Добавлены классы для скрытия скроллбара во всех браузерах
+  return <div ref={setNodeRef} className="flex-1 min-h-[50px] overflow-y-auto pr-1 overscroll-contain touch-pan-y [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">{children}</div>;
 }
 
 // --- Иконка Архива для перетаскивания ---
@@ -139,7 +140,7 @@ function CardModal({ card, onClose, onUpdate, onArchive }: { card: CardType, onC
   return (
     <motion.div className="fixed inset-0 bg-black/20 dark:bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4"
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
-      <motion.div className="bg-white/60 dark:bg-slate-900/80 backdrop-blur-2xl w-full max-w-md rounded-3xl p-6 border border-white/80 dark:border-white/10 shadow-2xl overflow-y-auto max-h-[90vh] scroller"
+      <motion.div className="bg-white/60 dark:bg-slate-900/80 backdrop-blur-2xl w-full max-w-md rounded-3xl p-6 border border-white/80 dark:border-white/10 shadow-2xl overflow-y-auto max-h-[90vh] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }} onClick={(e) => e.stopPropagation()}>
         
@@ -199,7 +200,7 @@ function ArchivePanel({ cards, onClose, onRestore }: { cards: CardType[], onClos
     <motion.div className="fixed inset-0 z-50 flex justify-end" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
       <div className="absolute inset-0 bg-black/20 dark:bg-black/60 backdrop-blur-sm"></div>
       <motion.div 
-        className="relative bg-white/60 dark:bg-slate-900/80 backdrop-blur-2xl w-full max-w-md h-full p-6 border-l border-white/80 dark:border-white/10 shadow-2xl overflow-y-auto scroller"
+        className="relative bg-white/60 dark:bg-slate-900/80 backdrop-blur-2xl w-full max-w-md h-full p-6 border-l border-white/80 dark:border-white/10 shadow-2xl overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         onClick={(e) => e.stopPropagation()}
@@ -293,7 +294,6 @@ export default function Home() {
     }
   }, [undoTimer, pendingDelete]);
 
-  // ИЗМЕНЕНО: Возвращаем PointerSensor, так как теперь мы используем ручку перетаскивания (drag handle)
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
@@ -410,7 +410,8 @@ export default function Home() {
         onDragCancel={() => setActiveCard(null)}
         measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
       >
-        <div className="relative z-10 flex-1 flex gap-4 p-6 overflow-x-auto scroller">
+        {/* ИЗМЕНЕНО: Скрыли скроллбар у горизонтальной прокрутки доски */}
+        <div className="relative z-10 flex-1 flex gap-4 p-6 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <AnimatePresence>
             {columns.map((col) => {
               const colCards = visibleCards.filter((c) => c.column_id === col.id);
