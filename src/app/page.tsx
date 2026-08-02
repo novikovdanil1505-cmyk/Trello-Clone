@@ -31,12 +31,20 @@ function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => vo
 
   return (
     <motion.div
-      ref={setNodeRef} {...attributes} {...listeners} style={style} layout
-      initial={{ opacity: 0, scale: 0.8, y: 10 }} animate={{ opacity: isDragging ? 0.4 : 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8 }}
-      transition={{ type: "spring", stiffness: 300, damping: 25 }} whileHover={{ y: -2 }}
+      ref={setNodeRef} 
+      {...attributes} 
+      {...listeners} 
+      // ДОБАВЛЕН ИНЛАЙН-СТИЛЬ touchAction: 'none'
+      style={{ transform: CSS.Transform.toString(transform), transition, touchAction: "none" }} 
+      layout
+      initial={{ opacity: 0, scale: 0.8, y: 10 }} 
+      animate={{ opacity: isDragging ? 0.4 : 1, scale: 1, y: 0 }} 
+      exit={{ opacity: 0, scale: 0.8 }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }} 
+      whileHover={{ y: -2 }}
       onClick={() => onOpen(card)}
-      // ДОБАВЛЕН КЛАСС touch-none В САМЫЙ КОНЕЦ СТРОКИ:
-      className={`bg-white/50 backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer active:cursor-grabbing border border-white/80 shadow-sm hover:bg-white/80 transition-colors touch-none`}
+      // ДОБАВЛЕН КЛАСС select-none, чтобы телефон не выделял текст
+      className={`bg-white/50 backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer active:cursor-grabbing border border-white/80 shadow-sm hover:bg-white/80 transition-colors select-none touch-none`}
     >
       <p className="text-sm text-slate-800 font-medium mb-1">{card.title}</p>
       <div className="flex gap-2 mt-2 text-xs text-slate-500">
