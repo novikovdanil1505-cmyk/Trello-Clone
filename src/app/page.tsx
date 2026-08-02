@@ -19,6 +19,8 @@ type CardType = {
   due_time?: string | null; 
   comment?: string | null;
   is_archived?: boolean;
+  client_name?: string | null;
+  phone_number?: string | null;
 };
 type ColumnType = { id: string; title: string; position: number };
 
@@ -51,6 +53,18 @@ const TrashIcon = ({ size = 16 }: { size?: number }) => (
   </svg>
 );
 
+const CopyIcon = ({ size = 18 }: { size?: number }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+  </svg>
+);
+
+const CheckIcon = ({ size = 18 }: { size?: number }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
 // --- Компонент Карточки ---
 function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => void }) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
@@ -73,7 +87,17 @@ function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => vo
       className={`bg-white/50 dark:bg-zinc-800/50 backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer active:cursor-grabbing border border-white/80 dark:border-white/10 shadow-sm hover:bg-white/80 dark:hover:bg-zinc-800/80 transition-colors select-none`}
     >
       <p className="text-sm text-slate-800 dark:text-slate-100 font-medium mb-1">{card.title}</p>
-      <div className="flex gap-2 mt-2 text-xs text-slate-500 dark:text-slate-400">
+      <div className="flex flex-wrap gap-2 mt-2 text-xs text-slate-500 dark:text-slate-400">
+        {card.client_name && (
+          <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1 truncate max-w-[120px]">
+            👤 {card.client_name}
+          </span>
+        )}
+        {card.phone_number && (
+          <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">
+            📞 {card.phone_number}
+          </span>
+        )}
         {card.due_date && (
           <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">
             📅 {new Date(card.due_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} {card.due_time || ''}
@@ -146,14 +170,25 @@ function CardModal({ card, onClose, onUpdate, onArchive }: { card: CardType, onC
   const [comment, setComment] = useState(card.comment || "");
   const [date, setDate] = useState<Date | undefined>(card.due_date ? new Date(card.due_date) : undefined);
   const [time, setTime] = useState(card.due_time || "");
+  const [clientName, setClientName] = useState(card.client_name || "");
+  const [phoneNumber, setPhoneNumber] = useState(card.phone_number || "");
+  const [copied, setCopied] = useState(false);
 
   const handleSave = () => {
     const formattedDate = date ? date.toISOString().split('T')[0] : null;
-    onUpdate(card.id, { title, comment, due_date: formattedDate, due_time: time });
+    onUpdate(card.id, { title, comment, due_date: formattedDate, due_time: time, client_name: clientName, phone_number: phoneNumber });
     onClose();
   };
 
   const handleArchive = () => { onArchive(card.id); onClose(); };
+
+  const handleCopyPhone = () => {
+    if (phoneNumber) {
+      navigator.clipboard.writeText(phoneNumber);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   return (
     <motion.div className="fixed inset-0 bg-black/20 dark:bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4"
@@ -166,6 +201,37 @@ function CardModal({ card, onClose, onUpdate, onArchive }: { card: CardType, onC
           <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
             className="bg-transparent text-xl font-semibold text-slate-800 dark:text-white outline-none w-full focus:border-b focus:border-slate-400" />
           <button onClick={onClose} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 text-2xl ml-4 leading-none">&times;</button>
+        </div>
+
+        {/* НОВОЕ: Блок данных клиента */}
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Данные клиента</h3>
+          <div className="space-y-3">
+            <input 
+              type="text" 
+              value={clientName} 
+              onChange={(e) => setClientName(e.target.value)}
+              placeholder="Имя клиента"
+              className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-slate-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+            />
+            <div className="relative">
+              <input 
+                type="tel" 
+                value={phoneNumber} 
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="Номер телефона"
+                className="w-full p-3 pr-12 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-slate-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+              />
+              <button 
+                type="button" 
+                onClick={handleCopyPhone} 
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                title="Скопировать номер"
+              >
+                {copied ? <CheckIcon size={18} /> : <CopyIcon size={18} />}
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="mb-6">
@@ -443,7 +509,6 @@ export default function Home() {
                     <h2 className="font-semibold text-slate-700 dark:text-slate-200 text-sm uppercase tracking-wider">{col.title}</h2>
                     <div className="flex items-center gap-1">
                       <span className="bg-black/5 dark:bg-white/10 text-slate-600 dark:text-slate-300 text-xs px-2 py-1 rounded-full font-medium">{colCards.length}</span>
-                      {/* ИЗМЕНЕНО: Классы opacity-0 group-hover:opacity-100 удалены, иконка видна всегда */}
                       <button 
                         onClick={() => handleDeleteColumn(col)} 
                         className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-full p-1 transition-all duration-200"
