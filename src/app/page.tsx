@@ -22,6 +22,20 @@ type CardType = {
 };
 type ColumnType = { id: string; title: string; position: number };
 
+// --- ВЕКТОРНЫЕ ИКОНКИ ---
+const SunIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" />
+  </svg>
+);
+
+const MoonIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+  </svg>
+);
+
 // --- Компонент Карточки ---
 function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => void }) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
@@ -371,22 +385,23 @@ export default function Home() {
   const archivedCards = cards.filter(c => c.is_archived);
 
   return (
-    // ИЗМЕНЕНО: Темная тема стала монохромной темно-серой с градиентами
-    <main className="bg-slate-100 h-screen flex flex-col overflow-hidden relative bg-gradient-to-br from-sky-100 via-purple-50 to-pink-100 dark:from-zinc-800 dark:via-zinc-900 dark:to-neutral-900 transition-colors">
-      {/* ИЗМЕНЕНО: Орбы стали темно-серыми (монохромными) */}
-      <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-blue-300/40 dark:bg-zinc-700/30 rounded-full blur-[120px] pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-purple-300/40 dark:bg-neutral-700/30 rounded-full blur-[120px] pointer-events-none"></div>
+    // ИЗМЕНЕНО: Светлая тема стала монохромной серой
+    <main className="bg-slate-100 h-screen flex flex-col overflow-hidden relative bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-zinc-800 dark:via-zinc-900 dark:to-neutral-900 transition-colors">
+      {/* ИЗМЕНЕНО: Орбы стали монохромными для обеих тем */}
+      <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-slate-300/40 dark:bg-zinc-700/30 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-slate-400/30 dark:bg-neutral-700/30 rounded-full blur-[120px] pointer-events-none"></div>
 
       <header className="relative z-10 flex items-center justify-between p-4 bg-white/40 dark:bg-white/5 backdrop-blur-2xl border-b border-white/60 dark:border-white/10 shadow-sm">
         <h1 className="text-slate-800 dark:text-white font-semibold text-lg tracking-tight">NOVIKOV PRODUCTION</h1>
         
         <div className="flex items-center gap-2">
+          {/* ИЗМЕНЕНО: Векторные иконки вместо эмодзи */}
           <button 
             onClick={toggleTheme} 
             className="text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 p-2 rounded-xl transition-colors"
             title="Сменить тему"
           >
-            {isDark ? "☀️" : "🌙"}
+            {isDark ? <SunIcon /> : <MoonIcon />}
           </button>
 
           <button onClick={() => setIsArchiveOpen(true)} className="text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 px-3 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm font-medium">
