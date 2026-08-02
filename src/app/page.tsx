@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import {
-  DndContext, DragOverlay, PointerSensor, TouchSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, useDroppable, MeasuringStrategy,
+  DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, useDroppable, MeasuringStrategy,
 } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -27,14 +27,12 @@ function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => vo
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: card.id, data: { type: "Card", card },
   });
-  const style = { transform: CSS.Transform.toString(transform), transition };
 
   return (
     <motion.div
       ref={setNodeRef} 
       {...attributes} 
       {...listeners} 
-      // ДОБАВЛЕН ИНЛАЙН-СТИЛЬ touchAction: 'none'
       style={{ transform: CSS.Transform.toString(transform), transition, touchAction: "none" }} 
       layout
       initial={{ opacity: 0, scale: 0.8, y: 10 }} 
@@ -43,7 +41,6 @@ function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => vo
       transition={{ type: "spring", stiffness: 300, damping: 25 }} 
       whileHover={{ y: -2 }}
       onClick={() => onOpen(card)}
-      // ДОБАВЛЕН КЛАСС select-none, чтобы телефон не выделял текст
       className={`bg-white/50 backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer active:cursor-grabbing border border-white/80 shadow-sm hover:bg-white/80 transition-colors select-none touch-none`}
     >
       <p className="text-sm text-slate-800 font-medium mb-1">{card.title}</p>
@@ -64,7 +61,7 @@ function DroppableContainer({ id, children }: { id: string, children: React.Reac
   return <div ref={setNodeRef} className="flex-1 min-h-[50px] overflow-y-auto pr-1 scroller">{children}</div>;
 }
 
-// --- Иконка Архива для перетаскивания (используем обычный CSS) ---
+// --- Иконка Архива для перетаскивания (на обычном CSS) ---
 function ArchiveDropZone({ isDragging }: { isDragging: boolean }) {
   const { setNodeRef, isOver } = useDroppable({ id: 'archive-zone' });
   
@@ -144,7 +141,7 @@ function CardModal({ card, onClose, onUpdate, onArchive }: { card: CardType, onC
         <div className="mb-6">
           <div className="flex flex-col gap-4 items-center bg-white/80 p-4 rounded-2xl border border-white/80 shadow-sm">
             <div className="w-full flex justify-center [&_*]:!text-slate-800">
-                            <DayPicker 
+              <DayPicker 
                 mode="single" 
                 selected={date} 
                 onSelect={setDate} 
@@ -263,12 +260,13 @@ export default function Home() {
     }
   }, [undoTimer, pendingDelete]);
 
+  // ИСПРАВЛЕНО: Раздельные сенсоры для мыши и тачскрина
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 5 },
+    useSensor(MouseSensor, {
+      activationConstraint: { distance: 10 },
     }),
     useSensor(TouchSensor, {
-      activationConstraint: { delay: 250, tolerance: 5 }, // Задержка 250мс для перетаскивания
+      activationConstraint: { delay: 200, tolerance: 8 },
     })
   );
 
@@ -366,11 +364,11 @@ export default function Home() {
         </button>
       </header>
 
-      {/* ИЗМЕНЕНО: DndContext вынесен наружу, чтобы зона архива не была внутри скролл-контейнера */}
       <DndContext 
         sensors={sensors} 
         onDragStart={onDragStart} 
         onDragEnd={onDragEnd}
+        onDragCancel={() => setActiveCard(null)}
         measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
       >
         <div className="relative z-10 flex-1 flex gap-4 p-6 overflow-x-auto scroller">
@@ -422,7 +420,7 @@ export default function Home() {
           </DragOverlay>
         </div>
 
-        {/* Зона сброса для архива (теперь вне скролл-зоны) */}
+        {/* Зона сброса для архива */}
         <ArchiveDropZone isDragging={!!activeCard} />
       </DndContext>
 
