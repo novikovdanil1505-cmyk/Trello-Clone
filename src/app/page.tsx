@@ -17,17 +17,13 @@ type CardType = {
 type ColumnType = { id: string; title: string; position: number };
 type TelegramUser = { id: string; chat_id: string; name: string };
 
-// --- Палитра цветов ---
 const USER_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'];
 const getUserColor = (id: string) => {
   let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = id.charCodeAt(i) + ((hash << 5) - hash);
-  }
+  for (let i = 0; i < id.length; i++) { hash = id.charCodeAt(i) + ((hash << 5) - hash); }
   return USER_COLORS[Math.abs(hash) % USER_COLORS.length];
 };
 
-// --- Иконки ---
 const SunIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg>);
 const MoonIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg>);
 const ArchiveIcon = ({ size = 24 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="5" x="2" y="3" rx="1" /><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" /><path d="M10 12h4" /></svg>);
@@ -37,7 +33,6 @@ const CheckIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.
 const ChevronDownIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>);
 const LogoutIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" /></svg>);
 
-// --- Форма входа ---
 function AuthForm() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
@@ -85,7 +80,6 @@ function AuthForm() {
   );
 }
 
-// --- Карточка ---
 function Card({ card, telegramUsers, onOpen }: { card: CardType, telegramUsers: TelegramUser[], onOpen: (card: CardType) => void }) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id: card.id, data: { type: "Card", card } });
   const style = { transform: CSS.Transform.toString(transform), transition };
@@ -130,7 +124,6 @@ function AddCard({ columnId, onAdd }: { columnId: string, onAdd: (colId: string,
   return (<motion.form onSubmit={handleSubmit} className="mt-2 p-2 bg-white/60 dark:bg-zinc-800/60 backdrop-blur-xl rounded-xl border border-white/80 dark:border-white/10 shadow-sm" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}><textarea value={title} onChange={(e) => setTitle(e.target.value)} className="w-full p-2 bg-transparent rounded-lg outline-none focus:ring-1 focus:ring-slate-400 text-sm resize-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500" placeholder="Введите название..." autoFocus /><div className="flex gap-2 mt-2"><button type="submit" className="bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-slate-700 dark:hover:bg-white transition-colors shadow-sm">Добавить</button><button type="button" onClick={() => setIsAdding(false)} className="text-slate-500 dark:text-slate-400 px-3 py-1.5 rounded-lg text-sm hover:bg-black/5 dark:hover:bg-white/5 transition-colors">✕</button></div></motion.form>);
 }
 
-// --- Компонент выбора даты (с поддержкой диапазона времени) ---
 function DateSection({ title, dateStr, timeStr, onChange, useTimeRange = false }: { title: string, dateStr: string | null, timeStr: string | null, onChange: (date: string | null, time: string) => void, useTimeRange?: boolean }) {
   const [hasDate, setHasDate] = useState(!!dateStr);
   const parseDate = (d: string | null) => {
@@ -143,13 +136,10 @@ function DateSection({ title, dateStr, timeStr, onChange, useTimeRange = false }
   const [month, setMonth] = useState(initialDate.getMonth());
   const [year, setYear] = useState(initialDate.getFullYear());
   
-  // Логика для обычного времени
   const [time, setTime] = useState(!useTimeRange ? (timeStr || "") : "");
-
-  // Логика для диапазона времени (с 16:00 до 23:00)
   const timeParts = useTimeRange && timeStr ? timeStr.split(' - ') : [];
-  const [startTime, setStartTime] = useState(timeParts[0] || "16:00");
-  const [endTime, setEndTime] = useState(timeParts[1] || "23:00");
+  const [startTime, setStartTime] = useState(timeParts[0] || "00:00");
+  const [endTime, setEndTime] = useState(timeParts[1] || "23:59");
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
@@ -157,12 +147,14 @@ function DateSection({ title, dateStr, timeStr, onChange, useTimeRange = false }
   const currentYear = new Date().getFullYear();
   const yearsArray = Array.from({ length: 6 }, (_, i) => currentYear + i);
 
-  // Генерация времени для диапазона (16:00 - 23:00 с шагом 30 мин)
+  // ИЗМЕНЕНО: Генерация времени от 00:00 до 23:50 с шагом 10 минут
   const timesArray = [];
-  for (let h = 16; h <= 23; h++) {
-    timesArray.push(`${String(h).padStart(2, '0')}:00`);
-    if (h < 23) timesArray.push(`${String(h).padStart(2, '0')}:30`);
+  for (let h = 0; h <= 23; h++) {
+    for (let m = 0; m < 60; m += 10) {
+      timesArray.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+    }
   }
+  timesArray.push("23:59");
 
   const formatDateString = (d: number, m: number, y: number) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 
@@ -177,11 +169,8 @@ function DateSection({ title, dateStr, timeStr, onChange, useTimeRange = false }
   const toggleDate = () => {
     const newHasDate = !hasDate;
     setHasDate(newHasDate);
-    if (newHasDate) {
-      onChange(formatDateString(day, month, year), useTimeRange ? `${startTime} - ${endTime}` : time);
-    } else {
-      onChange(null, "");
-    }
+    if (newHasDate) { onChange(formatDateString(day, month, year), useTimeRange ? `${startTime} - ${endTime}` : time); } 
+    else { onChange(null, ""); }
   };
 
   return (
@@ -189,13 +178,9 @@ function DateSection({ title, dateStr, timeStr, onChange, useTimeRange = false }
       <div className="flex justify-between items-center mb-2">
         <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{title}</h3>
         {hasDate ? (
-          <button type="button" onClick={toggleDate} className="text-xs text-slate-400 hover:text-red-500 flex items-center gap-1">
-            <TrashIcon size={12} /> Убрать дату
-          </button>
+          <button type="button" onClick={toggleDate} className="text-xs text-slate-400 hover:text-red-500 flex items-center gap-1"><TrashIcon size={12} /> Убрать дату</button>
         ) : (
-          <button type="button" onClick={toggleDate} className="text-xs text-slate-400 hover:text-slate-600">
-            + Добавить дату
-          </button>
+          <button type="button" onClick={toggleDate} className="text-xs text-slate-400 hover:text-slate-600">+ Добавить дату</button>
         )}
       </div>
       {hasDate && (
@@ -234,30 +219,20 @@ function DateSection({ title, dateStr, timeStr, onChange, useTimeRange = false }
   );
 }
 
-// --- Выпадающий список пользователей ---
 function UserSelectDropdown({ users, selectedUsers, onToggle, onDeleteUser }: { users: TelegramUser[], selectedUsers: string[], onToggle: (chatId: string) => void, onDeleteUser: (chatId: string) => void }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
     <div className="relative">
-      <button 
-        type="button" 
-        onClick={() => setIsOpen(!isOpen)} 
-        className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl text-sm text-slate-700 dark:text-slate-200 flex items-center justify-between hover:bg-white/60 dark:hover:bg-zinc-800/70 transition-colors"
-      >
-        <span className="truncate">
-          {selectedUsers.length === 0 ? "Выбрать пользователей..." : `${selectedUsers.length} выбрано`}
-        </span>
+      <button type="button" onClick={() => setIsOpen(!isOpen)} className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl text-sm text-slate-700 dark:text-slate-200 flex items-center justify-between hover:bg-white/60 dark:hover:bg-zinc-800/70 transition-colors">
+        <span className="truncate">{selectedUsers.length === 0 ? "Выбрать пользователей..." : `${selectedUsers.length} выбрано`}</span>
         <ChevronDownIcon size={18} />
       </button>
-
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)}></div>
           <div className="absolute z-50 mt-2 w-full bg-white dark:bg-zinc-800 rounded-xl shadow-xl max-h-60 overflow-y-auto border border-slate-200 dark:border-slate-700 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {users.length === 0 ? (
-              <p className="text-xs text-slate-400 dark:text-slate-500 p-3 text-center">Нет пользователей. Напишите боту /start.</p>
-            ) : (
+            {users.length === 0 ? (<p className="text-xs text-slate-400 dark:text-slate-500 p-3 text-center">Нет пользователей. Напишите боту /start.</p>) : (
               users.map(user => {
                 const color = getUserColor(user.chat_id);
                 const isSelected = selectedUsers.includes(user.chat_id);
@@ -283,7 +258,6 @@ function UserSelectDropdown({ users, selectedUsers, onToggle, onDeleteUser }: { 
   );
 }
 
-// --- МОДАЛЬНОЕ ОКНО КАРТОЧКИ ---
 function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDeleteTelegramUser }: { card: CardType, telegramUsers: TelegramUser[], onClose: () => void, onUpdate: (id: string, data: Partial<CardType>) => void, onArchive: (id: string) => void, onDeleteTelegramUser: (chatId: string) => void }) {
   const [title, setTitle] = useState(card.title);
   const [comment, setComment] = useState(card.comment || "");
@@ -314,7 +288,6 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
   return (
     <motion.div className="fixed inset-0 bg-black/20 dark:bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
       <motion.div className="bg-white/60 dark:bg-zinc-900/80 backdrop-blur-2xl w-full max-w-md rounded-3xl p-6 border border-white/80 dark:border-white/10 shadow-2xl overflow-y-auto max-h-[90vh] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} onClick={(e) => e.stopPropagation()}>
-        
         <div className="flex justify-between items-start mb-6">
           <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="bg-transparent text-xl font-semibold text-slate-800 dark:text-white outline-none w-full focus:border-b focus:border-slate-400" />
           <button onClick={onClose} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 text-2xl ml-4 leading-none">&times;</button>
@@ -441,12 +414,39 @@ export default function Home() {
   }
 
   function onDragStart(e: DragStartEvent) { if (e.active.data.current?.type === "Card") setActiveCard(e.active.data.current.card); }
+  
   function onDragEnd(e: DragEndEvent) {
     const { active, over } = e; const draggedCard = active.data.current?.card as CardType | undefined; setActiveCard(null);
     if (!over) return; const activeId = active.id; const overId = over.id;
     if (overId === 'archive-zone') { if (draggedCard) { handleToggleArchive(draggedCard.id, true); } return; }
     if (activeId === overId) return;
-    setCards((prev) => { const activeCard = prev.find((c) => c.id === activeId); if (!activeCard) return prev; const overCard = prev.find((c) => c.id === overId); const newColId = overCard ? overCard.column_id : overId; if (activeCard.column_id === newColId) return prev; supabase.from('cards').update({ column_id: newColId }).eq('id', activeId).then(); return prev.map((c) => (c.id === activeId ? { ...c, column_id: newColId } : c)); });
+    
+    setCards((prev) => {
+      const activeCard = prev.find((c) => c.id === activeId);
+      if (!activeCard) return prev;
+      const overCard = prev.find((c) => c.id === overId);
+      const newColId = overCard ? overCard.column_id : overId;
+      if (activeCard.column_id === newColId) return prev;
+      
+      supabase.from('cards').update({ column_id: newColId }).eq('id', activeId).then();
+      
+      const colTitle = columns.find(c => c.id === newColId)?.title;
+      const chatIds = activeCard.telegram_ids ? activeCard.telegram_ids.split(',').filter(Boolean) : [];
+      if (chatIds.length > 0 && colTitle) {
+        fetch('/api/telegram', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chatIds,
+            cardData: { title: activeCard.title },
+            type: 'status',
+            newStatus: colTitle
+          })
+        }).catch(err => console.error("Telegram API error:", err));
+      }
+
+      return prev.map((c) => (c.id === activeId ? { ...c, column_id: newColId } : c));
+    });
   }
 
   async function handleAddCard(column_id: string, title: string) {
@@ -463,26 +463,39 @@ export default function Home() {
   function handleUndoDelete() { if (pendingDelete) { setColumns((prev) => [...prev, pendingDelete].sort((a, b) => a.position - b.position)); setPendingDelete(null); setUndoTimer(0); } }
 
   async function handleUpdateCard(id: string, updates: Partial<CardType>) {
+    const originalCard = cards.find(c => c.id === id);
+    
     setCards((prev) => prev.map((c) => (c.id === id ? { ...c, ...updates } : c)));
     const { error } = await supabase.from('cards').update(updates).eq('id', id);
     if (error) console.error("Ошибка обновления:", error);
 
-    if (updates.telegram_ids) {
-      const chatIds = updates.telegram_ids.split(',').filter(Boolean);
-      if (chatIds.length > 0) {
-        // НОВОЕ: Отправляем полные данные карточки для формирования сообщения
+    if (updates.telegram_ids !== undefined) {
+      const oldIds = originalCard?.telegram_ids ? originalCard.telegram_ids.split(',').filter(Boolean) : [];
+      const newIds = updates.telegram_ids ? updates.telegram_ids.split(',').filter(Boolean) : [];
+      
+      const newlyAssigned = newIds.filter(chatId => !oldIds.includes(chatId));
+      const existingAssigned = newIds.filter(chatId => oldIds.includes(chatId));
+
+      const cardData = {
+        title: updates.title !== undefined ? updates.title : originalCard?.title,
+        due_date: updates.due_date !== undefined ? updates.due_date : originalCard?.due_date,
+        due_time: updates.due_time !== undefined ? updates.due_time : originalCard?.due_time,
+        comment: updates.comment !== undefined ? updates.comment : originalCard?.comment
+      };
+
+      if (newlyAssigned.length > 0) {
         fetch('/api/telegram', { 
           method: 'POST', 
           headers: { 'Content-Type': 'application/json' }, 
-          body: JSON.stringify({ 
-            chatIds, 
-            cardData: {
-              title: updates.title,
-              due_date: updates.due_date,
-              due_time: updates.due_time,
-              comment: updates.comment
-            }
-          }) 
+          body: JSON.stringify({ chatIds: newlyAssigned, cardData, type: 'new' }) 
+        }).catch(err => console.error("Telegram API error:", err));
+      }
+
+      if (existingAssigned.length > 0) {
+        fetch('/api/telegram', { 
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' }, 
+          body: JSON.stringify({ chatIds: existingAssigned, cardData, type: 'updated' }) 
         }).catch(err => console.error("Telegram API error:", err));
       }
     }

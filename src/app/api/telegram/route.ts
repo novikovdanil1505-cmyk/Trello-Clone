@@ -3,27 +3,39 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
-  const { chatIds, cardData } = await req.json();
+  const { chatIds, cardData, type, newStatus } = await req.json();
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
 
   if (!botToken) {
     return NextResponse.json({ error: "Bot token is not configured" }, { status: 500 });
   }
 
-  // Формируем текст сообщения
-  let messageText = `📋 Новая карточка: ${cardData.title}`;
-  
-  if (cardData.due_date) {
-    const dateStr = new Date(cardData.due_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
-    messageText += `\n📅 Дата: ${dateStr}`;
-    if (cardData.due_time) messageText += ` ${cardData.due_time}`;
-  }
-  
-  if (cardData.comment) {
-    messageText += `\n💬 Комментарий: ${cardData.comment}`;
+  let messageText = "";
+
+  if (type === 'status') {
+    // Уведомление о смене статуса
+    messageText = `🔄 Статус изменен: ${cardData.title}`;
+    if (newStatus) messageText += `\n📦 Новый статус: ${newStatus}`;
+  } else if (type === 'updated') {
+    // Уведомление об обновлении
+    messageText = `✏️ Карточка обновлена: ${cardData.title}`;
+    if (cardData.due_date) {
+      const dateStr = new Date(cardData.due_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+      messageText += `\n📅 Дата: ${dateStr}`;
+      if (cardData.due_time) messageText += ` ${cardData.due_time}`;
+    }
+    if (cardData.comment) messageText += `\n💬 Комментарий: ${cardData.comment}`;
+  } else {
+    // Уведомление о новой карточке (или новом назначении)
+    messageText = `📋 Новая карточка: ${cardData.title}`;
+    if (cardData.due_date) {
+      const dateStr = new Date(cardData.due_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+      messageText += `\n📅 Дата: ${dateStr}`;
+      if (cardData.due_time) messageText += ` ${cardData.due_time}`;
+    }
+    if (cardData.comment) messageText += `\n💬 Комментарий: ${cardData.comment}`;
   }
 
-  // Создаем inline-кнопку
   const replyMarkup = JSON.stringify({
     inline_keyboard: [
       [{ text: "👁 Посмотреть", url: "https://nprodclone.vercel.app/" }]
