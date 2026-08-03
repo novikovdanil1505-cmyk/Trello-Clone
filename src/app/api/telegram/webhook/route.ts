@@ -1,15 +1,20 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Создаем клиента с правами обхода RLS (используем те же ключи, что и на фронте)
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Говорим Next.js, что этот маршрут не нужно генерировать при сборке
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  if (!botToken) return NextResponse.json({ error: "No token" }, { status: 500 });
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!botToken || !supabaseUrl || !supabaseKey) {
+    return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+  }
+
+  // Создаем клиента внутри функции запроса
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
   try {
     const update = await req.json();
@@ -28,11 +33,9 @@ export async function POST(req: Request) {
     let replyText = "";
 
     if (!existingUser) {
-      // Если пользователя нет, проверяем, что он прислал
       if (text === '/start') {
         replyText = "Добро пожаловать! Пожалуйста, введите ваше имя для регистрации в NOVIKOV PRODUCTION.";
       } else {
-        // Считаем текст именем и сохраняем
         const { data: newUser, error } = await supabase
           .from('telegram_users')
           .insert([{ chat_id: chatId, name: text }])
