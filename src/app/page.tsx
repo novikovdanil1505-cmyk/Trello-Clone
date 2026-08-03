@@ -13,7 +13,7 @@ type CardType = {
   id: string; title: string; column_id: string; due_date?: string | null; due_time?: string | null; 
   deadline_date?: string | null; deadline_time?: string | null;
   comment?: string | null; is_archived?: boolean; client_name?: string | null; phone_number?: string | null; telegram_ids?: string | null;
-  position?: number;
+  position?: number; payment_status?: string | null;
 };
 type ColumnType = { id: string; title: string; position: number };
 type TelegramUser = { id: string; chat_id: string; name: string };
@@ -82,14 +82,25 @@ function AuthForm() {
   );
 }
 
+// --- НОВОЕ: Стили для статусов оплаты ---
+const PAYMENT_STYLES: Record<string, { bg: string, dot: string, text: string }> = {
+  unpaid: { bg: "bg-red-100/60 dark:bg-red-900/20", dot: "bg-red-500", text: "Не оплачено" },
+  prepaid: { bg: "bg-yellow-100/60 dark:bg-yellow-900/20", dot: "bg-yellow-500", text: "Предоплата" },
+  paid: { bg: "bg-green-100/60 dark:bg-green-900/20", dot: "bg-green-500", text: "Оплачено" },
+};
+
+// --- Карточка ---
 function Card({ card, telegramUsers, onOpen }: { card: CardType, telegramUsers: TelegramUser[], onOpen: (card: CardType) => void }) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id: card.id, data: { type: "Card", card } });
   const style = { transform: CSS.Transform.toString(transform), transition };
   const tgIds = card.telegram_ids ? card.telegram_ids.split(',').filter(Boolean) : [];
   const assignedUsers = telegramUsers.filter(u => tgIds.includes(u.chat_id));
+  
+  // НОВОЕ: Выбор цвета карточки
+  const cardBg = card.payment_status ? PAYMENT_STYLES[card.payment_status].bg : "bg-white/50 dark:bg-zinc-800/50";
 
   return (
-    <motion.div ref={setNodeRef} {...attributes} {...listeners} style={style} layout initial={{ opacity: 0, scale: 0.8, y: 10 }} animate={{ opacity: isDragging ? 0.4 : 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} onClick={() => onOpen(card)} className={`bg-white/50 dark:bg-zinc-800/50 backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer active:cursor-grabbing border border-white/80 dark:border-white/10 shadow-sm hover:bg-white/80 dark:hover:bg-zinc-800/80 transition-colors select-none touch-none`}>
+    <motion.div ref={setNodeRef} {...attributes} {...listeners} style={style} layout initial={{ opacity: 0, scale: 0.8, y: 10 }} animate={{ opacity: isDragging ? 0.4 : 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} onClick={() => onOpen(card)} className={`${cardBg} backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer active:cursor-grabbing border border-white/80 dark:border-white/10 shadow-sm hover:bg-white/80 dark:hover:bg-zinc-800/80 transition-colors select-none touch-none`}>
       <p className="text-sm text-slate-800 dark:text-slate-100 font-medium mb-1">{card.title}</p>
       <div className="flex flex-wrap gap-2 mt-2 text-xs text-slate-500 dark:text-slate-400">
         {assignedUsers.map(u => {
@@ -105,6 +116,47 @@ function Card({ card, telegramUsers, onOpen }: { card: CardType, telegramUsers: 
         {card.comment && <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">💬</span>}
       </div>
     </motion.div>
+  );
+}
+
+// --- НОВОЕ: Выпадающий список статуса оплаты ---
+function PaymentSelect({ value, onChange }: { value: string | null, onChange: (val: string | null) => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const options = [
+    { value: "unpaid", label: "Не оплачено", color: "#ef4444" },
+    { value: "prepaid", label: "Предоплата", color: "#eab308" },
+    { value: "paid", label: "Оплачено", color: "#22c55e" },
+  ];
+  const selected = options.find(o => o.value === value);
+
+  return (
+    <div className="relative">
+      <button type="button" onClick={() => setIsOpen(!isOpen)} className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl text-sm text-slate-700 dark:text-slate-200 flex items-center justify-between hover:bg-white/60 dark:hover:bg-zinc-800/70 transition-colors">
+        <span className="flex items-center gap-2">
+          {selected ? <span style={{ backgroundColor: selected.color }} className="w-3 h-3 rounded-full"></span> : <span className="w-3 h-3 rounded-full border-2 border-slate-300"></span>}
+          {selected ? selected.label : "Выбрать..."}
+        </span>
+        <ChevronDownIcon size={18} />
+      </button>
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)}></div>
+          <div className="absolute z-50 mt-2 w-full bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+            {options.map(opt => (
+              <button key={opt.value} type="button" onClick={() => { onChange(opt.value); setIsOpen(false); }} className="flex items-center gap-2 p-2.5 w-full hover:bg-slate-100 dark:hover:bg-zinc-700/50 transition-colors text-left">
+                <span style={{ backgroundColor: opt.color }} className="w-3 h-3 rounded-full"></span>
+                <span className="text-sm text-slate-700 dark:text-slate-200">{opt.label}</span>
+              </button>
+            ))}
+            {value && (
+              <button type="button" onClick={() => { onChange(null); setIsOpen(false); }} className="text-red-500 text-xs p-2 w-full text-center border-t border-slate-200 dark:border-slate-700 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                Убрать статус
+              </button>
+            )}
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -266,6 +318,9 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
   const [phoneNumber, setPhoneNumber] = useState(card.phone_number || "");
   const [selectedUsers, setSelectedUsers] = useState<string[]>(card.telegram_ids ? card.telegram_ids.split(',').filter(Boolean) : []);
   const [copied, setCopied] = useState(false);
+  
+  // НОВОЕ: Состояние для статуса оплаты
+  const [paymentStatus, setPaymentStatus] = useState<string | null>(card.payment_status || null);
 
   const [dueDate, setDueDate] = useState<string | null>(card.due_date);
   const [dueTime, setDueTime] = useState<string>(card.due_time || "");
@@ -277,7 +332,8 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
     onUpdate(card.id, { 
       title, comment, due_date: dueDate, due_time: dueTime, 
       deadline_date: deadlineDate, deadline_time: deadlineTime,
-      client_name: clientName, phone_number: phoneNumber, telegram_ids: cleanTelegramIds 
+      client_name: clientName, phone_number: phoneNumber, telegram_ids: cleanTelegramIds,
+      payment_status: paymentStatus // НОВОЕ
     });
     onClose();
   };
@@ -303,6 +359,12 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
               <button type="button" onClick={handleCopyPhone} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors" title="Скопировать номер">{copied ? <CheckIcon size={18} /> : <CopyIcon size={18} />}</button>
             </div>
           </div>
+        </div>
+
+        {/* НОВОЕ: Блок статуса оплаты */}
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Статус оплаты</h3>
+          <PaymentSelect value={paymentStatus} onChange={setPaymentStatus} />
         </div>
 
         <div className="mb-6">
@@ -426,9 +488,8 @@ export default function Home() {
     const activeType = active.data.current?.type;
     const overType = over.data.current?.type;
 
-    if (activeType !== "Card") return; // Игнорируем, если это не карточка
+    if (activeType !== "Card") return;
 
-    // Архивация
     if (over.id === 'archive-zone') { 
       const draggedCard = active.data.current?.card as CardType | undefined;
       if (draggedCard) handleToggleArchive(draggedCard.id, true); 
@@ -453,7 +514,6 @@ export default function Home() {
         newColId = overId as string;
       }
 
-      // Если колонка изменилась, отправляем уведомление в TG
       if (oldColId !== newColId) {
         const colTitle = columns.find(c => c.id === newColId)?.title;
         const chatIds = activeCard.telegram_ids ? activeCard.telegram_ids.split(',').filter(Boolean) : [];
@@ -473,18 +533,15 @@ export default function Home() {
 
       activeCard.column_id = newColId;
       
-      // Удаляем старую карточку и вставляем на новое место
       let updatedCards = prev.filter(c => c.id !== activeId);
       
       if (overType === "Card") {
         const overIndex = updatedCards.findIndex(c => c.id === overId);
         updatedCards.splice(overIndex, 0, activeCard);
       } else {
-        // Если брошена в пустое место колонки, добавляем в конец
         updatedCards.push(activeCard);
       }
 
-      // Пересчитываем позиции для затронутых колонок
       const affectedCols = new Set([oldColId, newColId]);
       affectedCols.forEach(colId => {
         let pos = 1;
