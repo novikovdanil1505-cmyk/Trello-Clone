@@ -33,7 +33,8 @@ const MoonIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" heigh
 const ArchiveIcon = ({ size = 24 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="5" x="2" y="3" rx="1" /><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" /><path d="M10 12h4" /></svg>);
 const TrashIcon = ({ size = 16 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>);
 const CopyIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>);
-const CheckIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>);
+const CheckIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>);
+const ChevronDownIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>);
 const LogoutIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" /></svg>);
 
 // --- Форма входа ---
@@ -203,13 +204,76 @@ function DateSection({ title, dateStr, timeStr, onChange }: { title: string, dat
   );
 }
 
+// --- НОВЫЙ Компонент: Выпадающий список пользователей ---
+function UserSelectDropdown({ users, selectedUsers, onToggle, onDeleteUser }: { users: TelegramUser[], selectedUsers: string[], onToggle: (chatId: string) => void, onDeleteUser: (chatId: string) => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <button 
+        type="button" 
+        onClick={() => setIsOpen(!isOpen)} 
+        className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl text-sm text-slate-700 dark:text-slate-200 flex items-center justify-between hover:bg-white/60 dark:hover:bg-zinc-800/70 transition-colors"
+      >
+        <span className="truncate">
+          {selectedUsers.length === 0 ? "Выбрать пользователей..." : `${selectedUsers.length} выбрано`}
+        </span>
+        <ChevronDownIcon size={18} />
+      </button>
+
+      {isOpen && (
+        <>
+          {/* Невидимый слой для закрытия при клике вне списка */}
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)}></div>
+          
+          <div className="absolute z-50 mt-2 w-full bg-white dark:bg-zinc-800 rounded-xl shadow-xl max-h-60 overflow-y-auto border border-slate-200 dark:border-slate-700 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {users.length === 0 ? (
+              <p className="text-xs text-slate-400 dark:text-slate-500 p-3 text-center">Нет пользователей. Напишите боту /start.</p>
+            ) : (
+              users.map(user => {
+                const color = getUserColor(user.chat_id);
+                const isSelected = selectedUsers.includes(user.chat_id);
+                return (
+                  <div key={user.chat_id} className="flex justify-between items-center p-2.5 hover:bg-slate-100 dark:hover:bg-zinc-700/50 transition-colors">
+                    <button 
+                      type="button" 
+                      onClick={() => onToggle(user.chat_id)} 
+                      className="flex items-center gap-2.5 flex-1 text-left"
+                    >
+                      <span 
+                        style={isSelected ? { backgroundColor: color, borderColor: color } : { borderColor: color }} 
+                        className={`w-4 h-4 rounded-md border-2 flex items-center justify-center transition-colors`}
+                      >
+                        {isSelected && <CheckIcon size={12} className="text-white" />}
+                      </span>
+                      <span className="text-sm text-slate-700 dark:text-slate-200">{user.name}</span>
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => onDeleteUser(user.chat_id)} 
+                      className="text-slate-300 hover:text-red-500 transition-colors ml-2 p-1"
+                      title="Удалить пользователя из базы"
+                    >
+                      <TrashIcon size={14} />
+                    </button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // --- МОДАЛЬНОЕ ОКНО КАРТОЧКИ ---
 function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDeleteTelegramUser }: { card: CardType, telegramUsers: TelegramUser[], onClose: () => void, onUpdate: (id: string, data: Partial<CardType>) => void, onArchive: (id: string) => void, onDeleteTelegramUser: (chatId: string) => void }) {
   const [title, setTitle] = useState(card.title);
   const [comment, setComment] = useState(card.comment || "");
   const [clientName, setClientName] = useState(card.client_name || "");
   const [phoneNumber, setPhoneNumber] = useState(card.phone_number || "");
-  const [selectedUsers, setSelectedUsers] = useState<string[]>(card.telegram_ids ? card.telegram_ids.split(',') : []);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>(card.telegram_ids ? card.telegram_ids.split(',').filter(Boolean) : []);
   const [copied, setCopied] = useState(false);
 
   // Состояния для ДАТЫ и СРОКА
@@ -254,33 +318,12 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
 
         <div className="mb-6">
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Уведомить в Telegram</h3>
-          <div className="flex flex-wrap gap-2 p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl">
-            {telegramUsers.length === 0 ? (<p className="text-xs text-slate-400 dark:text-slate-500 py-1">Нет зарегистрированных пользователей. Напишите боту /start.</p>) : (telegramUsers.map(user => {
-              const color = getUserColor(user.chat_id);
-              const isSelected = selectedUsers.includes(user.chat_id);
-              return (
-                <div key={user.chat_id} className="flex items-center bg-black/5 dark:bg-white/10 rounded-lg overflow-hidden">
-                  <button 
-                    type="button"
-                    onClick={() => toggleUser(user.chat_id)}
-                    style={isSelected ? { backgroundColor: color, color: 'white' } : {}}
-                    className={`px-3 py-1.5 text-xs font-medium transition-colors flex items-center gap-1.5 ${isSelected ? '' : 'text-slate-600 dark:text-slate-300'}`}
-                  >
-                    {!isSelected && <span style={{ backgroundColor: color }} className="w-2 h-2 rounded-full"></span>}
-                    {user.name}
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={() => onDeleteTelegramUser(user.chat_id)}
-                    className="px-1.5 text-slate-400 hover:text-red-500 transition-colors"
-                    title="Удалить пользователя из базы"
-                  >
-                    <TrashIcon size={12} />
-                  </button>
-                </div>
-              );
-            }))}
-          </div>
+          <UserSelectDropdown 
+            users={telegramUsers} 
+            selectedUsers={selectedUsers} 
+            onToggle={toggleUser} 
+            onDeleteUser={onDeleteTelegramUser} 
+          />
         </div>
 
         <DateSection title="ДАТА" dateStr={card.due_date} timeStr={card.due_time} onChange={(d, t) => { setDueDate(d); setDueTime(t); }} />
