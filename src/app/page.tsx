@@ -91,7 +91,6 @@ function Card({ card, telegramUsers, onOpen }: { card: CardType, telegramUsers: 
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id: card.id, data: { type: "Card", card } });
   const style = { transform: CSS.Transform.toString(transform), transition };
   
-  // Находим данных пользователей, отмеченных в этой карточке
   const tgIds = card.telegram_ids ? card.telegram_ids.split(',').filter(Boolean) : [];
   const assignedUsers = telegramUsers.filter(u => tgIds.includes(u.chat_id));
 
@@ -99,17 +98,16 @@ function Card({ card, telegramUsers, onOpen }: { card: CardType, telegramUsers: 
     <motion.div ref={setNodeRef} {...attributes} {...listeners} style={style} layout initial={{ opacity: 0, scale: 0.8, y: 10 }} animate={{ opacity: isDragging ? 0.4 : 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} onClick={() => onOpen(card)} className={`bg-white/50 dark:bg-zinc-800/50 backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer active:cursor-grabbing border border-white/80 dark:border-white/10 shadow-sm hover:bg-white/80 dark:hover:bg-zinc-800/80 transition-colors select-none`}>
       <p className="text-sm text-slate-800 dark:text-slate-100 font-medium mb-1">{card.title}</p>
       <div className="flex flex-wrap gap-2 mt-2 text-xs text-slate-500 dark:text-slate-400">
-        {/* НОВОЕ: Цветные маркеры пользователей вместо самолета */}
+        {/* НОВОЕ: Полное имя с цветом */}
         {assignedUsers.map(u => {
           const color = getUserColor(u.chat_id);
           return (
-            <span key={u.chat_id} style={{ backgroundColor: color }} className="px-1.5 py-1 rounded-md flex items-center gap-1 text-white text-[10px] font-bold uppercase">
-              {u.name.charAt(0)}
+            <span key={u.chat_id} style={{ backgroundColor: color }} className="px-2 py-1 rounded-md text-white text-[11px] font-medium whitespace-nowrap">
+              {u.name}
             </span>
           );
         })}
-        {card.client_name && (<span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1 truncate max-w-[120px]">👤 {card.client_name}</span>)}
-        {card.phone_number && (<span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">📞 {card.phone_number}</span>)}
+        {/* Убраны client_name и phone_number */}
         {card.due_date && (<span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">📅 {new Date(card.due_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} {card.due_time || ''}</span>)}
         {card.comment && <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">💬</span>}
       </div>
