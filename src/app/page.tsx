@@ -25,12 +25,17 @@ const getUserColor = (id: string) => {
   return USER_COLORS[Math.abs(hash) % USER_COLORS.length];
 };
 
-// --- Иконки ---
+const PAYMENT_STYLES: Record<string, { bg: string, dot: string, text: string }> = {
+  unpaid: { bg: "bg-red-100/60 dark:bg-red-900/20", dot: "bg-red-500", text: "Не оплачено" },
+  prepaid: { bg: "bg-yellow-100/60 dark:bg-yellow-900/20", dot: "bg-yellow-500", text: "Предоплата" },
+  paid: { bg: "bg-green-100/60 dark:bg-green-900/20", dot: "bg-green-500", text: "Оплачено" },
+};
+
 const SunIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg>);
 const MoonIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg>);
 const ArchiveIcon = ({ size = 24 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="5" x="2" y="3" rx="1" /><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" /><path d="M10 12h4" /></svg>);
 const TrashIcon = ({ size = 16 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>);
-const CopyIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>);
+const CopyIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2, 2" /></svg>);
 const CheckIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>);
 const ChevronDownIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>);
 const LogoutIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" /></svg>);
@@ -82,21 +87,11 @@ function AuthForm() {
   );
 }
 
-// --- НОВОЕ: Стили для статусов оплаты ---
-const PAYMENT_STYLES: Record<string, { bg: string, dot: string, text: string }> = {
-  unpaid: { bg: "bg-red-100/60 dark:bg-red-900/20", dot: "bg-red-500", text: "Не оплачено" },
-  prepaid: { bg: "bg-yellow-100/60 dark:bg-yellow-900/20", dot: "bg-yellow-500", text: "Предоплата" },
-  paid: { bg: "bg-green-100/60 dark:bg-green-900/20", dot: "bg-green-500", text: "Оплачено" },
-};
-
-// --- Карточка ---
 function Card({ card, telegramUsers, onOpen }: { card: CardType, telegramUsers: TelegramUser[], onOpen: (card: CardType) => void }) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id: card.id, data: { type: "Card", card } });
   const style = { transform: CSS.Transform.toString(transform), transition };
   const tgIds = card.telegram_ids ? card.telegram_ids.split(',').filter(Boolean) : [];
   const assignedUsers = telegramUsers.filter(u => tgIds.includes(u.chat_id));
-  
-  // НОВОЕ: Выбор цвета карточки
   const cardBg = card.payment_status ? PAYMENT_STYLES[card.payment_status].bg : "bg-white/50 dark:bg-zinc-800/50";
 
   return (
@@ -119,7 +114,6 @@ function Card({ card, telegramUsers, onOpen }: { card: CardType, telegramUsers: 
   );
 }
 
-// --- НОВОЕ: Выпадающий список статуса оплаты ---
 function PaymentSelect({ value, onChange }: { value: string | null, onChange: (val: string | null) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const options = [
@@ -180,11 +174,7 @@ function AddCard({ columnId, onAdd }: { columnId: string, onAdd: (colId: string,
 
 function DateSection({ title, dateStr, timeStr, onChange, useTimeRange = false }: { title: string, dateStr: string | null, timeStr: string | null, onChange: (date: string | null, time: string) => void, useTimeRange?: boolean }) {
   const [hasDate, setHasDate] = useState(!!dateStr);
-  const parseDate = (d: string | null) => {
-    if (!d) return new Date();
-    const [y, m, dy] = d.split('-').map(Number);
-    return new Date(y, m - 1, dy);
-  };
+  const parseDate = (d: string | null) => { if (!d) return new Date(); const [y, m, dy] = d.split('-').map(Number); return new Date(y, m - 1, dy); };
   const initialDate = parseDate(dateStr);
   const [day, setDay] = useState(initialDate.getDate());
   const [month, setMonth] = useState(initialDate.getMonth());
@@ -202,11 +192,7 @@ function DateSection({ title, dateStr, timeStr, onChange, useTimeRange = false }
   const yearsArray = Array.from({ length: 6 }, (_, i) => currentYear + i);
 
   const timesArray = [];
-  for (let h = 0; h <= 23; h++) {
-    for (let m = 0; m < 60; m += 10) {
-      timesArray.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
-    }
-  }
+  for (let h = 0; h <= 23; h++) { for (let m = 0; m < 60; m += 10) { timesArray.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`); } }
   timesArray.push("23:59");
 
   const formatDateString = (d: number, m: number, y: number) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
@@ -219,22 +205,13 @@ function DateSection({ title, dateStr, timeStr, onChange, useTimeRange = false }
   const handleStartTimeChange = (val: string) => { setStartTime(val); onChange(formatDateString(day, month, year), `${val} - ${endTime}`); };
   const handleEndTimeChange = (val: string) => { setEndTime(val); onChange(formatDateString(day, month, year), `${startTime} - ${val}`); };
   
-  const toggleDate = () => {
-    const newHasDate = !hasDate;
-    setHasDate(newHasDate);
-    if (newHasDate) { onChange(formatDateString(day, month, year), useTimeRange ? `${startTime} - ${endTime}` : time); } 
-    else { onChange(null, ""); }
-  };
+  const toggleDate = () => { const newHasDate = !hasDate; setHasDate(newHasDate); if (newHasDate) { onChange(formatDateString(day, month, year), useTimeRange ? `${startTime} - ${endTime}` : time); } else { onChange(null, ""); } };
 
   return (
     <div className="mb-6">
       <div className="flex justify-between items-center mb-2">
         <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{title}</h3>
-        {hasDate ? (
-          <button type="button" onClick={toggleDate} className="text-xs text-slate-400 hover:text-red-500 flex items-center gap-1"><TrashIcon size={12} /> Убрать дату</button>
-        ) : (
-          <button type="button" onClick={toggleDate} className="text-xs text-slate-400 hover:text-slate-600">+ Добавить дату</button>
-        )}
+        {hasDate ? (<button type="button" onClick={toggleDate} className="text-xs text-slate-400 hover:text-red-500 flex items-center gap-1"><TrashIcon size={12} /> Убрать дату</button>) : (<button type="button" onClick={toggleDate} className="text-xs text-slate-400 hover:text-slate-600">+ Добавить дату</button>)}
       </div>
       {hasDate && (
         <div className="flex flex-col gap-3 bg-white/80 dark:bg-zinc-800/50 p-4 rounded-2xl border border-white/80 dark:border-white/10 shadow-sm">
@@ -249,7 +226,6 @@ function DateSection({ title, dateStr, timeStr, onChange, useTimeRange = false }
               {yearsArray.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
-          
           {useTimeRange ? (
             <div className="flex items-center justify-center gap-2 border-t border-slate-100 dark:border-slate-700 pt-4">
               <select value={startTime} onChange={(e) => handleStartTimeChange(e.target.value)} className="bg-white/80 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-slate-400 font-medium cursor-pointer">
@@ -318,8 +294,6 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
   const [phoneNumber, setPhoneNumber] = useState(card.phone_number || "");
   const [selectedUsers, setSelectedUsers] = useState<string[]>(card.telegram_ids ? card.telegram_ids.split(',').filter(Boolean) : []);
   const [copied, setCopied] = useState(false);
-  
-  // НОВОЕ: Состояние для статуса оплаты
   const [paymentStatus, setPaymentStatus] = useState<string | null>(card.payment_status || null);
 
   const [dueDate, setDueDate] = useState<string | null>(card.due_date);
@@ -333,7 +307,7 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
       title, comment, due_date: dueDate, due_time: dueTime, 
       deadline_date: deadlineDate, deadline_time: deadlineTime,
       client_name: clientName, phone_number: phoneNumber, telegram_ids: cleanTelegramIds,
-      payment_status: paymentStatus // НОВОЕ
+      payment_status: paymentStatus
     });
     onClose();
   };
@@ -361,7 +335,6 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
           </div>
         </div>
 
-        {/* НОВОЕ: Блок статуса оплаты */}
         <div className="mb-6">
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Статус оплаты</h3>
           <PaymentSelect value={paymentStatus} onChange={setPaymentStatus} />
@@ -423,25 +396,59 @@ export default function Home() {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => { setUser(session?.user ?? null); });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => { setUser(session?.user ?? null); });
+    // НОВОЕ: Проверка, открыт ли сайт внутри Telegram
+    const tg = (window as any).Telegram?.WebApp;
     
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('tg_token');
-    if (token) {
-      fetch('/api/auth/telegram', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token })
-      }).then(res => res.json()).then(data => {
-        if (data.chat_id) {
-          setTgUser({ name: data.name, chat_id: data.chat_id });
-          window.history.replaceState({}, document.title, window.location.pathname);
-        }
-      });
+    if (tg) {
+      // Мы внутри Telegram Mini App
+      tg.ready();
+      tg.expand(); // Разворачиваем на весь экран
+      
+      // 1. Синхронизируем тему с настройками Telegram
+      if (tg.colorScheme === 'dark') {
+        document.documentElement.classList.add('dark');
+        setIsDark(true);
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        setIsDark(false);
+        localStorage.setItem('theme', 'light');
+      }
+      
+      // 2. Автоматический вход по данным из Telegram
+      const tgUserData = tg.initDataUnsafe?.user;
+      if (tgUserData && tgUserData.id) {
+        const chatId = tgUserData.id.toString();
+        // Ищем пользователя в базе
+        supabase.from('telegram_users').select('*').eq('chat_id', chatId).single().then(({ data }) => {
+          if (data) {
+            setTgUser({ name: data.name, chat_id: data.chat_id });
+          } else {
+            // Если пользователь открыл Mini App, но еще не писал боту /start — регистрируем его автоматически
+            const newName = tgUserData.first_name || "Telegram User";
+            supabase.from('telegram_users').insert([{ chat_id: chatId, name: newName, username: tgUserData.username }]).select().single().then(({ data: newUser }) => {
+              if (newUser) setTgUser({ name: newUser.name, chat_id: newUser.chat_id });
+            });
+          }
+        });
+      }
+    } else {
+      // Обычный браузер (оставляем старую логику)
+      supabase.auth.getSession().then(({ data: { session } }) => { setUser(session?.user ?? null); });
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => { setUser(session?.user ?? null); });
+      
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('tg_token');
+      if (token) {
+        fetch('/api/auth/telegram', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) }).then(res => res.json()).then(data => {
+          if (data.chat_id) {
+            setTgUser({ name: data.name, chat_id: data.chat_id });
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        });
+      }
+      return () => subscription.unsubscribe();
     }
-
-    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -476,9 +483,7 @@ export default function Home() {
     return (<main className="bg-slate-100 h-screen flex flex-col items-center justify-center overflow-hidden relative bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-zinc-800 dark:via-zinc-900 dark:to-neutral-900 transition-colors"><div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-slate-300/40 dark:bg-zinc-700/30 rounded-full blur-[120px] pointer-events-none"></div><div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-slate-400/30 dark:bg-neutral-700/30 rounded-full blur-[120px] pointer-events-none"></div><AuthForm /></main>);
   }
 
-  function onDragStart(e: DragStartEvent) { 
-    if (e.active.data.current?.type === "Card") setActiveCard(e.active.data.current.card); 
-  }
+  function onDragStart(e: DragStartEvent) { if (e.active.data.current?.type === "Card") setActiveCard(e.active.data.current.card); }
   
   function onDragEnd(e: DragEndEvent) {
     const { active, over } = e;
