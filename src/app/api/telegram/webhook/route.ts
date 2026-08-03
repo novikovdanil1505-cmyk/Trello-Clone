@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { randomUUID } from 'crypto';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +19,7 @@ export async function POST(req: Request) {
     const update = await req.json();
     const chatId = update.message?.chat?.id?.toString();
     const text = update.message?.text;
+    const username = update.message?.from?.username || "unknown";
 
     if (!chatId || !text) return NextResponse.json({ ok: true });
 
@@ -30,10 +32,9 @@ export async function POST(req: Request) {
     let replyText = "";
 
     if (text === '/stop' || text === '/unsubscribe') {
-      // НОВОЕ: Удаление пользователя по команде /stop
       if (existingUser) {
         await supabase.from('telegram_users').delete().eq('chat_id', chatId);
-        replyText = "Вы отписались от уведомлений NOVIKOV PRODUCTION. Ваше имя удалено из списка. Чтобы вернуться, напишите /start.";
+        replyText = "Вы отписались от уведомлений NOVIKOV PRODUCTION.";
       } else {
         replyText = "Вы еще не зарегистрированы.";
       }
@@ -41,20 +42,24 @@ export async function POST(req: Request) {
       if (text === '/start') {
         replyText = "Добро пожаловать! Пожалуйста, введите ваше имя для регистрации в NOVIKOV PRODUCTION.";
       } else {
+        const token = randomUUID();
         const { data: newUser, error } = await supabase
           .from('telegram_users')
-          .insert([{ chat_id: chatId, name: text }])
+          .insert([{ chat_id: chatId, name: text, username: username, login_token: token }])
           .select()
           .single();
         
         if (error) {
           replyText = "Произошла ошибка при регистрации. Попробуйте еще раз.";
         } else {
-          replyText = `Вы успешно зарегистрированы как ${newUser.name}! Теперь вы можете получать уведомления о новых карточках.`;
+          replyText = `Вы успешно зарегистрированы как ${newUser.name}!\n\nВот ваша персональная ссылка для входа на доску:\nhttps://nprodclone.vercel.app/?tg_token=${token}`;
         }
       }
     } else {
-      replyText = `Вы уже зарегистрированы как ${existingUser.name}.`;
+      // Если пользователь уже есть, просто выдаем ему новую ссылку
+      const token = randomUUID();
+      await supabase.from('telegram_users').update({ login_token: token }).eq('chat_id', chatId);
+      replyText = `Вы уже зарегистрированы как ${existingUser.name}.\n\nВот ваша новая ссылка для входа на доску:\nhttps://nprodclone.vercel.app/?tg_token=${token}`;
     }
 
     await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
