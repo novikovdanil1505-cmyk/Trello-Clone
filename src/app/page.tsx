@@ -1,9 +1,9 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import {
-  DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, useDroppable, MeasuringStrategy,
+  DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, useDroppable, MeasuringStrategy, closestCorners, closestCenter,
 } from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
+import { SortableContext, verticalListSortingStrategy, useSortable, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
@@ -13,6 +13,7 @@ type CardType = {
   id: string; title: string; column_id: string; due_date?: string | null; due_time?: string | null; 
   deadline_date?: string | null; deadline_time?: string | null;
   comment?: string | null; is_archived?: boolean; client_name?: string | null; phone_number?: string | null; telegram_ids?: string | null;
+  position?: number;
 };
 type ColumnType = { id: string; title: string; position: number };
 type TelegramUser = { id: string; chat_id: string; name: string };
@@ -24,6 +25,7 @@ const getUserColor = (id: string) => {
   return USER_COLORS[Math.abs(hash) % USER_COLORS.length];
 };
 
+// --- Иконки ---
 const SunIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg>);
 const MoonIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg>);
 const ArchiveIcon = ({ size = 24 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="5" x="2" y="3" rx="1" /><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" /><path d="M10 12h4" /></svg>);
@@ -32,6 +34,7 @@ const CopyIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w
 const CheckIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>);
 const ChevronDownIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>);
 const LogoutIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" /></svg>);
+const GripIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="6" r="1" /><circle cx="9" cy="12" r="1" /><circle cx="9" cy="18" r="1" /><circle cx="15" cy="6" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="18" r="1" /></svg>);
 
 function AuthForm() {
   const [isLogin, setIsLogin] = useState(true);
@@ -87,7 +90,7 @@ function Card({ card, telegramUsers, onOpen }: { card: CardType, telegramUsers: 
   const assignedUsers = telegramUsers.filter(u => tgIds.includes(u.chat_id));
 
   return (
-    <motion.div ref={setNodeRef} {...attributes} {...listeners} style={style} layout initial={{ opacity: 0, scale: 0.8, y: 10 }} animate={{ opacity: isDragging ? 0.4 : 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} onClick={() => onOpen(card)} className={`bg-white/50 dark:bg-zinc-800/50 backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer active:cursor-grabbing border border-white/80 dark:border-white/10 shadow-sm hover:bg-white/80 dark:hover:bg-zinc-800/80 transition-colors select-none`}>
+    <motion.div ref={setNodeRef} {...attributes} {...listeners} style={style} layout initial={{ opacity: 0, scale: 0.8, y: 10 }} animate={{ opacity: isDragging ? 0.4 : 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} onClick={() => onOpen(card)} className={`bg-white/50 dark:bg-zinc-800/50 backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer active:cursor-grabbing border border-white/80 dark:border-white/10 shadow-sm hover:bg-white/80 dark:hover:bg-zinc-800/80 transition-colors select-none touch-none`}>
       <p className="text-sm text-slate-800 dark:text-slate-100 font-medium mb-1">{card.title}</p>
       <div className="flex flex-wrap gap-2 mt-2 text-xs text-slate-500 dark:text-slate-400">
         {assignedUsers.map(u => {
@@ -106,8 +109,30 @@ function Card({ card, telegramUsers, onOpen }: { card: CardType, telegramUsers: 
   );
 }
 
+// НОВЫЙ Компонент: Обертка для колонки, чтобы её можно было перетаскивать
+function SortableColumn({ col, children }: { col: ColumnType, children: React.ReactNode }) {
+  const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id: col.id, data: { type: "Column", col } });
+  const style = { transform: CSS.Transform.toString(transform), transition };
+
+  return (
+    <motion.div 
+      ref={setNodeRef} 
+      style={style} 
+      layout 
+      initial={{ opacity: 0, scale: 0.9 }} 
+      animate={{ opacity: isDragging ? 0.5 : 1, scale: 1 }} 
+      exit={{ opacity: 0, scale: 0.8 }} 
+      className={`group bg-white/40 dark:bg-white/5 backdrop-blur-2xl w-80 rounded-3xl p-3 flex flex-col max-h-full flex-shrink-0 border border-white/60 dark:border-white/10 shadow-lg ${isDragging ? 'shadow-2xl' : ''}`}
+    >
+      {children}
+      {/* Скрытый элемент для прослушки перетаскивания (заголовок) */}
+      <div {...attributes} {...listeners} className="absolute top-0 left-0 right-0 h-12 cursor-grab active:cursor-grabbing touch-none"></div>
+    </motion.div>
+  );
+}
+
 function DroppableContainer({ id, children }: { id: string, children: React.ReactNode }) {
-  const { setNodeRef } = useDroppable({ id });
+  const { setNodeRef } = useDroppable({ id, data: { type: "Column" } });
   return <div ref={setNodeRef} className="flex-1 min-h-[50px] overflow-y-auto pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">{children}</div>;
 }
 
@@ -147,7 +172,6 @@ function DateSection({ title, dateStr, timeStr, onChange, useTimeRange = false }
   const currentYear = new Date().getFullYear();
   const yearsArray = Array.from({ length: 6 }, (_, i) => currentYear + i);
 
-  // ИЗМЕНЕНО: Генерация времени от 00:00 до 23:50 с шагом 10 минут
   const timesArray = [];
   for (let h = 0; h <= 23; h++) {
     for (let m = 0; m < 60; m += 10) {
@@ -352,6 +376,7 @@ export default function Home() {
   const [cards, setCards] = useState<CardType[]>([]);
   const [telegramUsers, setTelegramUsers] = useState<TelegramUser[]>([]);
   const [activeCard, setActiveCard] = useState<CardType | null>(null);
+  const [activeColumn, setActiveColumn] = useState<ColumnType | null>(null);
   const [editingCard, setEditingCard] = useState<CardType | null>(null);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   
@@ -413,40 +438,120 @@ export default function Home() {
     return (<main className="bg-slate-100 h-screen flex flex-col items-center justify-center overflow-hidden relative bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-zinc-800 dark:via-zinc-900 dark:to-neutral-900 transition-colors"><div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-slate-300/40 dark:bg-zinc-700/30 rounded-full blur-[120px] pointer-events-none"></div><div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-slate-400/30 dark:bg-neutral-700/30 rounded-full blur-[120px] pointer-events-none"></div><AuthForm /></main>);
   }
 
-  function onDragStart(e: DragStartEvent) { if (e.active.data.current?.type === "Card") setActiveCard(e.active.data.current.card); }
+  function onDragStart(e: DragStartEvent) { 
+    if (e.active.data.current?.type === "Card") setActiveCard(e.active.data.current.card); 
+    if (e.active.data.current?.type === "Column") setActiveColumn(e.active.data.current.col); 
+  }
   
+  // НОВОЕ: Полностью переписанная логика перемещения (колонки и карточки)
   function onDragEnd(e: DragEndEvent) {
-    const { active, over } = e; const draggedCard = active.data.current?.card as CardType | undefined; setActiveCard(null);
-    if (!over) return; const activeId = active.id; const overId = over.id;
-    if (overId === 'archive-zone') { if (draggedCard) { handleToggleArchive(draggedCard.id, true); } return; }
-    if (activeId === overId) return;
-    
-    setCards((prev) => {
-      const activeCard = prev.find((c) => c.id === activeId);
-      if (!activeCard) return prev;
-      const overCard = prev.find((c) => c.id === overId);
-      const newColId = overCard ? overCard.column_id : overId;
-      if (activeCard.column_id === newColId) return prev;
-      
-      supabase.from('cards').update({ column_id: newColId }).eq('id', activeId).then();
-      
-      const colTitle = columns.find(c => c.id === newColId)?.title;
-      const chatIds = activeCard.telegram_ids ? activeCard.telegram_ids.split(',').filter(Boolean) : [];
-      if (chatIds.length > 0 && colTitle) {
-        fetch('/api/telegram', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chatIds,
-            cardData: { title: activeCard.title },
-            type: 'status',
-            newStatus: colTitle
-          })
-        }).catch(err => console.error("Telegram API error:", err));
+    const { active, over } = e;
+    setActiveCard(null);
+    setActiveColumn(null);
+    if (!over) return;
+
+    const activeType = active.data.current?.type;
+    const overType = over.data.current?.type;
+
+    // 1. ПЕРЕМЕЩЕНИЕ КОЛОНКИ
+    if (activeType === "Column" && overType === "Column") {
+      if (active.id === over.id) return;
+      setColumns(prev => {
+        const oldIndex = prev.findIndex(c => c.id === active.id);
+        const newIndex = prev.findIndex(c => c.id === over.id);
+        
+        const newCols = [...prev];
+        const [movedCol] = newCols.splice(oldIndex, 1);
+        newCols.splice(newIndex, 0, movedCol);
+        
+        // Обновляем позиции
+        newCols.forEach((col, idx) => {
+          if (col.position !== idx + 1) {
+            col.position = idx + 1;
+            supabase.from('columns').update({ position: idx + 1 }).eq('id', col.id).then();
+          }
+        });
+        return newCols;
+      });
+      return;
+    }
+
+    // 2. ПЕРЕМЕЩЕНИЕ КАРТОЧКИ
+    if (activeType === "Card") {
+      // Архивация
+      if (over.id === 'archive-zone') { 
+        const draggedCard = active.data.current?.card as CardType | undefined;
+        if (draggedCard) handleToggleArchive(draggedCard.id, true); 
+        return; 
       }
 
-      return prev.map((c) => (c.id === activeId ? { ...c, column_id: newColId } : c));
-    });
+      const activeId = active.id;
+      const overId = over.id;
+
+      setCards(prev => {
+        const activeCard = prev.find(c => c.id === activeId);
+        if (!activeCard) return prev;
+
+        const oldColId = activeCard.column_id;
+        let newColId = oldColId;
+
+        if (overType === "Card") {
+          const overCard = prev.find(c => c.id === overId);
+          if (!overCard) return prev;
+          newColId = overCard.column_id;
+        } else if (overType === "Column") {
+          newColId = overId as string;
+        }
+
+        if (oldColId !== newColId) {
+          // Отправка уведомления в TG
+          const colTitle = columns.find(c => c.id === newColId)?.title;
+          const chatIds = activeCard.telegram_ids ? activeCard.telegram_ids.split(',').filter(Boolean) : [];
+          if (chatIds.length > 0 && colTitle) {
+            fetch('/api/telegram', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                chatIds,
+                cardData: { title: activeCard.title },
+                type: 'status',
+                newStatus: colTitle
+              })
+            }).catch(err => console.error("Telegram API error:", err));
+          }
+        }
+
+        activeCard.column_id = newColId;
+        
+        // Переставляем карточку
+        let updatedCards = prev.filter(c => c.id !== activeId);
+        
+        if (overType === "Card") {
+          const overIndex = updatedCards.findIndex(c => c.id === overId);
+          updatedCards.splice(overIndex, 0, activeCard);
+        } else {
+          // Если брошена в пустое место колонки, добавляем в конец
+          updatedCards.push(activeCard);
+        }
+
+        // Пересчитываем позиции для затронутых колонок
+        const affectedCols = new Set([oldColId, newColId]);
+        affectedCols.forEach(colId => {
+          let pos = 1;
+          updatedCards.forEach(c => {
+            if (c.column_id === colId) {
+              if (c.position !== pos) {
+                c.position = pos;
+                supabase.from('cards').update({ column_id: c.column_id, position: pos }).eq('id', c.id).then();
+              }
+              pos++;
+            }
+          });
+        });
+
+        return updatedCards;
+      });
+    }
   }
 
   async function handleAddCard(column_id: string, title: string) {
@@ -539,35 +644,51 @@ export default function Home() {
           <button onClick={handleLogout} className="text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 p-2 rounded-xl transition-colors" title="Выйти"><LogoutIcon /></button>
         </div>
       </header>
-      <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setActiveCard(null)} measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}>
-        <div className="relative z-10 flex-1 flex gap-4 p-6 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          <AnimatePresence>
-            {columns.map((col) => {
-              const colCards = visibleCards.filter((c) => c.column_id === col.id);
-              return (
-                <motion.div key={col.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="group bg-white/40 dark:bg-white/5 backdrop-blur-2xl w-80 rounded-3xl p-3 flex flex-col max-h-full flex-shrink-0 border border-white/60 dark:border-white/10 shadow-lg">
-                  <div className="flex items-center justify-between mb-3 px-3 pt-1">
-                    <h2 className="font-semibold text-slate-700 dark:text-slate-200 text-sm uppercase tracking-wider">{col.title}</h2>
-                    <div className="flex items-center gap-1">
-                      <span className="bg-black/5 dark:bg-white/10 text-slate-600 dark:text-slate-300 text-xs px-2 py-1 rounded-full font-medium">{colCards.length}</span>
-                      <button onClick={() => handleDeleteColumn(col)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-full p-1 transition-all duration-200" title="Удалить колонку"><TrashIcon size={16} /></button>
+
+      <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => { setActiveCard(null); setActiveColumn(null); }} collisionDetection={closestCorners} measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}>
+        {/* НОВОЕ: SortableContext для колонок (горизонтальная сортировка) */}
+        <SortableContext items={columns.map(c => c.id)} strategy={horizontalListSortingStrategy}>
+          <div className="relative z-10 flex-1 flex gap-4 p-6 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <AnimatePresence>
+              {columns.map((col) => {
+                const colCards = visibleCards.filter((c) => c.column_id === col.id);
+                return (
+                  <SortableColumn key={col.id} col={col}>
+                    <div className="flex items-center justify-between mb-3 px-3 pt-1 relative z-10 pointer-events-none">
+                      <div className="flex items-center gap-2 pointer-events-none">
+                        <GripIcon />
+                        <h2 className="font-semibold text-slate-700 dark:text-slate-200 text-sm uppercase tracking-wider">{col.title}</h2>
+                      </div>
+                      <div className="flex items-center gap-1 pointer-events-auto">
+                        <span className="bg-black/5 dark:bg-white/10 text-slate-600 dark:text-slate-300 text-xs px-2 py-1 rounded-full font-medium">{colCards.length}</span>
+                        <button onClick={() => handleDeleteColumn(col)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-full p-1 transition-all duration-200" title="Удалить колонку"><TrashIcon size={16} /></button>
+                      </div>
                     </div>
-                  </div>
-                  <SortableContext id={col.id} items={colCards.map(c => c.id)} strategy={verticalListSortingStrategy}>
-                    <DroppableContainer id={col.id}>{colCards.map((card) => <Card key={card.id} card={card} telegramUsers={telegramUsers} onOpen={setEditingCard} />)}</DroppableContainer>
-                  </SortableContext>
-                  <AddCard columnId={col.id} onAdd={handleAddCard} />
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-          <div className="w-72 flex-shrink-0">
-            <button onClick={handleAddColumn} className="bg-white/30 dark:bg-white/5 backdrop-blur-xl border border-dashed border-slate-300 dark:border-white/10 hover:border-slate-400 dark:hover:border-white/30 hover:bg-white/50 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white font-medium w-full py-3 rounded-3xl flex items-center justify-center gap-2 transition-all shadow-sm">+ Добавить колонку</button>
+
+                    <SortableContext id={col.id} items={colCards.map(c => c.id)} strategy={verticalListSortingStrategy}>
+                      <DroppableContainer id={col.id}>{colCards.map((card) => <Card key={card.id} card={card} telegramUsers={telegramUsers} onOpen={setEditingCard} />)}</DroppableContainer>
+                    </SortableContext>
+                    
+                    <AddCard columnId={col.id} onAdd={handleAddCard} />
+                  </SortableColumn>
+                );
+              })}
+            </AnimatePresence>
+            
+            <div className="w-72 flex-shrink-0">
+              <button onClick={handleAddColumn} className="bg-white/30 dark:bg-white/5 backdrop-blur-xl border border-dashed border-slate-300 dark:border-white/10 hover:border-slate-400 dark:hover:border-white/30 hover:bg-white/50 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white font-medium w-full py-3 rounded-3xl flex items-center justify-center gap-2 transition-all shadow-sm">+ Добавить колонку</button>
+            </div>
           </div>
-          <DragOverlay>{activeCard && (<div className="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-2xl p-3 rounded-2xl shadow-2xl w-72 cursor-grabbing border border-white dark:border-white/10 rotate-3"><p className="text-sm text-slate-800 dark:text-slate-100 font-medium">{activeCard.title}</p></div>)}</DragOverlay>
-        </div>
+        </SortableContext>
+
+        <DragOverlay>
+          {activeCard && (<div className="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-2xl p-3 rounded-2xl shadow-2xl w-72 cursor-grabbing border border-white dark:border-white/10 rotate-3"><p className="text-sm text-slate-800 dark:text-slate-100 font-medium">{activeCard.title}</p></div>)}
+          {activeColumn && (<div className="bg-white/40 dark:bg-white/5 backdrop-blur-2xl w-80 rounded-3xl p-3 border border-white/60 dark:border-white/10 shadow-2xl opacity-80"></div>)}
+        </DragOverlay>
+        
         <ArchiveDropZone isDragging={!!activeCard} />
       </DndContext>
+
       <AnimatePresence>{editingCard && (<CardModal card={editingCard} telegramUsers={telegramUsers} onClose={() => setEditingCard(null)} onUpdate={handleUpdateCard} onArchive={(id) => handleToggleArchive(id, true)} onDeleteTelegramUser={handleDeleteTelegramUser} />)}</AnimatePresence>
       <AnimatePresence>{isArchiveOpen && (<ArchivePanel cards={archivedCards} onClose={() => setIsArchiveOpen(false)} onRestore={(id) => handleToggleArchive(id, false)} onClearAll={handleClearArchive} />)}</AnimatePresence>
       <AnimatePresence>{pendingDelete && (<motion.div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-slate-800/80 dark:bg-zinc-100/80 backdrop-blur-xl text-white dark:text-zinc-900 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-4 border border-white/10 dark:border-black/10" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} transition={{ type: "spring", stiffness: 300, damping: 25 }}><span className="text-sm font-medium">Колонка удалена</span><button onClick={handleUndoDelete} className="text-slate-300 dark:text-slate-700 font-semibold text-sm hover:text-white dark:hover:text-black transition-colors flex items-center gap-1 bg-white/10 dark:bg-black/10 px-3 py-1 rounded-lg">Отменить <span className="text-xs w-5 text-center">({undoTimer})</span></button></motion.div>)}</AnimatePresence>
