@@ -22,6 +22,7 @@ type CardType = {
   is_archived?: boolean;
   client_name?: string | null;
   phone_number?: string | null;
+  telegram_ids?: string | null;
 };
 type ColumnType = { id: string; title: string; position: number };
 
@@ -91,7 +92,7 @@ function AuthForm() {
     } else {
       const { error } = await supabase.auth.signUp({ email, password });
       if (error) setError(error.message);
-      else setIsLogin(true); // Переключаем на вход после успешной регистрации
+      else setIsLogin(true);
     }
     setLoading(false);
   };
@@ -105,51 +106,23 @@ function AuthForm() {
         <h1 className="text-2xl font-bold text-slate-800 dark:text-white mb-6 text-center">NOVIKOV PRODUCTION</h1>
         
         <div className="flex bg-slate-200/50 dark:bg-slate-800/50 p-1 rounded-xl mb-6">
-          <button 
-            onClick={() => setIsLogin(true)} 
-            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${isLogin ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm" : "text-slate-500 dark:text-slate-400"}`}
-          >
-            Вход
-          </button>
-          <button 
-            onClick={() => setIsLogin(false)} 
-            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${!isLogin ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm" : "text-slate-500 dark:text-slate-400"}`}
-          >
-            Регистрация
-          </button>
+          <button onClick={() => setIsLogin(true)} className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${isLogin ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm" : "text-slate-500 dark:text-slate-400"}`}>Вход</button>
+          <button onClick={() => setIsLogin(false)} className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${!isLogin ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm" : "text-slate-500 dark:text-slate-400"}`}>Регистрация</button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Email</label>
-            <input 
-              type="email" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
-              required
-              className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-xl outline-none focus:ring-1 focus:ring-slate-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
-              placeholder="example@mail.com"
-            />
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-xl outline-none focus:ring-1 focus:ring-slate-400 text-sm text-slate-800 dark:text-white" placeholder="example@mail.com" />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Пароль</label>
-            <input 
-              type="password" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              required
-              className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-xl outline-none focus:ring-1 focus:ring-slate-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
-              placeholder="Минимум 6 символов"
-            />
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-xl outline-none focus:ring-1 focus:ring-slate-400 text-sm text-slate-800 dark:text-white" placeholder="Минимум 6 символов" />
           </div>
 
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="w-full bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 py-3 rounded-xl font-medium hover:bg-slate-700 dark:hover:bg-white transition-colors shadow-md disabled:opacity-50"
-          >
+          <button type="submit" disabled={loading} className="w-full bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 py-3 rounded-xl font-medium hover:bg-slate-700 dark:hover:bg-white transition-colors shadow-md disabled:opacity-50">
             {loading ? "Загрузка..." : (isLogin ? "Войти" : "Зарегистрироваться")}
           </button>
         </form>
@@ -167,51 +140,33 @@ function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => vo
 
   return (
     <motion.div
-      ref={setNodeRef} 
-      {...attributes} 
-      {...listeners} 
-      style={style} 
-      layout
-      initial={{ opacity: 0, scale: 0.8, y: 10 }} 
-      animate={{ opacity: isDragging ? 0.4 : 1, scale: 1, y: 0 }} 
-      exit={{ opacity: 0, scale: 0.8 }}
+      ref={setNodeRef} {...attributes} {...listeners} style={style} layout
+      initial={{ opacity: 0, scale: 0.8, y: 10 }} animate={{ opacity: isDragging ? 0.4 : 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8 }}
       transition={{ type: "spring", stiffness: 300, damping: 25 }} 
       onClick={() => onOpen(card)}
       className={`bg-white/50 dark:bg-zinc-800/50 backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer active:cursor-grabbing border border-white/80 dark:border-white/10 shadow-sm hover:bg-white/80 dark:hover:bg-zinc-800/80 transition-colors select-none`}
     >
       <p className="text-sm text-slate-800 dark:text-slate-100 font-medium mb-1">{card.title}</p>
       <div className="flex flex-wrap gap-2 mt-2 text-xs text-slate-500 dark:text-slate-400">
-        {card.client_name && (
-          <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1 truncate max-w-[120px]">
-            👤 {card.client_name}
-          </span>
-        )}
-        {card.phone_number && (
-          <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">
-            📞 {card.phone_number}
-          </span>
-        )}
-        {card.due_date && (
-          <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">
-            📅 {new Date(card.due_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} {card.due_time || ''}
-          </span>
-        )}
+        {card.client_name && (<span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1 truncate max-w-[120px]">👤 {card.client_name}</span>)}
+        {card.phone_number && (<span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">📞 {card.phone_number}</span>)}
+        {card.telegram_ids && (<span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">✈️ {card.telegram_ids.split(',').length}</span>)}
+        {card.due_date && (<span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">📅 {new Date(card.due_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} {card.due_time || ''}</span>)}
         {card.comment && <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">💬</span>}
       </div>
     </motion.div>
   );
 }
 
-// --- Обертка для сброса (СКРЫТАЯ ПРОКРУТКА) ---
+// --- Обертка для сброса ---
 function DroppableContainer({ id, children }: { id: string, children: React.ReactNode }) {
   const { setNodeRef } = useDroppable({ id });
   return <div ref={setNodeRef} className="flex-1 min-h-[50px] overflow-y-auto pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">{children}</div>;
 }
 
-// --- Иконка Архива для перетаскивания (ВЕКТОР) ---
+// --- Иконка Архива для перетаскивания ---
 function ArchiveDropZone({ isDragging }: { isDragging: boolean }) {
   const { setNodeRef, isOver } = useDroppable({ id: 'archive-zone' });
-  
   return (
     <div
       ref={setNodeRef}
@@ -246,9 +201,7 @@ function AddCard({ columnId, onAdd }: { columnId: string, onAdd: (colId: string,
   return (
     <motion.form onSubmit={handleSubmit} className="mt-2 p-2 bg-white/60 dark:bg-zinc-800/60 backdrop-blur-xl rounded-xl border border-white/80 dark:border-white/10 shadow-sm"
       initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}>
-      <textarea value={title} onChange={(e) => setTitle(e.target.value)} 
-        className="w-full p-2 bg-transparent rounded-lg outline-none focus:ring-1 focus:ring-slate-400 text-sm resize-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500" 
-        placeholder="Введите название..." autoFocus />
+      <textarea value={title} onChange={(e) => setTitle(e.target.value)} className="w-full p-2 bg-transparent rounded-lg outline-none focus:ring-1 focus:ring-slate-400 text-sm resize-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500" placeholder="Введите название..." autoFocus />
       <div className="flex gap-2 mt-2">
         <button type="submit" className="bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-slate-700 dark:hover:bg-white transition-colors shadow-sm">Добавить</button>
         <button type="button" onClick={() => setIsAdding(false)} className="text-slate-500 dark:text-slate-400 px-3 py-1.5 rounded-lg text-sm hover:bg-black/5 dark:hover:bg-white/5 transition-colors">✕</button>
@@ -265,11 +218,14 @@ function CardModal({ card, onClose, onUpdate, onArchive }: { card: CardType, onC
   const [time, setTime] = useState(card.due_time || "");
   const [clientName, setClientName] = useState(card.client_name || "");
   const [phoneNumber, setPhoneNumber] = useState(card.phone_number || "");
+  const [telegramIds, setTelegramIds] = useState(card.telegram_ids || "");
   const [copied, setCopied] = useState(false);
 
   const handleSave = () => {
     const formattedDate = date ? date.toISOString().split('T')[0] : null;
-    onUpdate(card.id, { title, comment, due_date: formattedDate, due_time: time, client_name: clientName, phone_number: phoneNumber });
+    const cleanTelegramIds = telegramIds.split(',').map(id => id.trim()).filter(Boolean).join(',');
+    
+    onUpdate(card.id, { title, comment, due_date: formattedDate, due_time: time, client_name: clientName, phone_number: phoneNumber, telegram_ids: cleanTelegramIds });
     onClose();
   };
 
@@ -291,8 +247,7 @@ function CardModal({ card, onClose, onUpdate, onArchive }: { card: CardType, onC
         transition={{ type: "spring", stiffness: 300, damping: 25 }} onClick={(e) => e.stopPropagation()}>
         
         <div className="flex justify-between items-start mb-6">
-          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
-            className="bg-transparent text-xl font-semibold text-slate-800 dark:text-white outline-none w-full focus:border-b focus:border-slate-400" />
+          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="bg-transparent text-xl font-semibold text-slate-800 dark:text-white outline-none w-full focus:border-b focus:border-slate-400" />
           <button onClick={onClose} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 text-2xl ml-4 leading-none">&times;</button>
         </div>
 
@@ -300,64 +255,49 @@ function CardModal({ card, onClose, onUpdate, onArchive }: { card: CardType, onC
         <div className="mb-6">
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Данные клиента</h3>
           <div className="space-y-3">
-            <input 
-              type="text" 
-              value={clientName} 
-              onChange={(e) => setClientName(e.target.value)}
-              placeholder="Имя клиента"
-              className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-slate-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
-            />
+            <input type="text" value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Имя клиента" className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-slate-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500" />
+            
             <div className="relative">
-              <input 
-                type="tel" 
-                value={phoneNumber} 
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="Номер телефона"
-                className="w-full p-3 pr-12 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-slate-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
-              />
-              <button 
-                type="button" 
-                onClick={handleCopyPhone} 
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-                title="Скопировать номер"
-              >
+              <input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="Номер телефона" className="w-full p-3 pr-12 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-slate-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500" />
+              <button type="button" onClick={handleCopyPhone} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors" title="Скопировать номер">
                 {copied ? <CheckIcon size={18} /> : <CopyIcon size={18} />}
               </button>
             </div>
+
+            {/* НОВОЕ: Поле Telegram ID */}
+            <input 
+              type="text" 
+              value={telegramIds} 
+              onChange={(e) => setTelegramIds(e.target.value)} 
+              placeholder="Telegram ID (через запятую: 12345, 67890)" 
+              className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-slate-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500" 
+            />
           </div>
         </div>
 
         <div className="mb-6">
           <div className="flex flex-col gap-4 items-center bg-white/80 dark:bg-zinc-800/50 p-4 rounded-2xl border border-white/80 dark:border-white/10 shadow-sm">
             <div className="w-full flex justify-center [&_*]:!text-slate-800 dark:[&_*]:!text-slate-200">
-              <DayPicker 
-                mode="single" 
-                selected={date} 
-                onSelect={setDate} 
-                locale={ru}
+              <DayPicker mode="single" selected={date} onSelect={setDate} locale={ru}
                 classNames={{
-                  caption: "flex justify-between items-center py-2", 
-                  caption_label: "!text-slate-900 dark:!text-white font-bold text-base",
+                  caption: "flex justify-between items-center py-2", caption_label: "!text-slate-900 dark:!text-white font-bold text-base",
                   nav_button: "!text-red-500 dark:!text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-full p-1 transition-colors",
                   head_cell: "!text-slate-700 dark:!text-slate-400 text-xs font-bold w-9 text-center",
                   day: "w-9 h-9 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors text-center text-sm font-medium",
                   day_selected: "bg-slate-800 dark:bg-slate-100 !text-white dark:!text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 hover:!text-white dark:hover:!text-slate-900 font-bold",
                   day_today: "font-bold !text-red-500 dark:!text-red-400 ring-1 ring-red-500 dark:ring-red-400 rounded-full",
-                } as any} 
-              />
+                } as any} />
             </div>
             <div className="w-full flex items-center justify-center gap-3 border-t border-slate-100 dark:border-slate-700 pt-4">
               <label className="text-sm text-slate-600 dark:text-slate-300 font-medium">Время:</label>
-              <input type="time" value={time} onChange={(e) => setTime(e.target.value)}
-                className="bg-white/80 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-slate-400 font-medium" />
+              <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="bg-white/80 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-slate-400 font-medium" />
             </div>
           </div>
         </div>
 
         <div className="mb-6">
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Комментарий</h3>
-          <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Напишите что-нибудь..."
-            className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-slate-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 resize-none" rows={4} />
+          <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Напишите что-нибудь..." className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-slate-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 resize-none" rows={4} />
         </div>
 
         <div className="flex gap-3">
@@ -376,12 +316,7 @@ function ArchivePanel({ cards, onClose, onRestore, onClearAll }: { cards: CardTy
   return (
     <motion.div className="fixed inset-0 z-50 flex justify-end" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
       <div className="absolute inset-0 bg-black/20 dark:bg-black/60 backdrop-blur-sm"></div>
-      <motion.div 
-        className="relative bg-white/60 dark:bg-zinc-900/80 backdrop-blur-2xl w-full max-w-md h-full p-6 border-l border-white/80 dark:border-white/10 shadow-2xl flex flex-col"
-        initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <motion.div className="relative bg-white/60 dark:bg-zinc-900/80 backdrop-blur-2xl w-full max-w-md h-full p-6 border-l border-white/80 dark:border-white/10 shadow-2xl flex flex-col" initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', stiffness: 300, damping: 30 }} onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-slate-800 dark:text-white font-semibold text-xl">Архив</h2>
           <button onClick={onClose} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 text-2xl leading-none">&times;</button>
@@ -389,19 +324,13 @@ function ArchivePanel({ cards, onClose, onRestore, onClearAll }: { cards: CardTy
         
         <div className="flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {cards.length === 0 ? (
-            <div className="text-center mt-20 text-slate-500 dark:text-slate-400">
-              <p className="text-5xl mb-4">🗑️</p>
-              <p>Архив пуст</p>
-            </div>
+            <div className="text-center mt-20 text-slate-500 dark:text-slate-400"><p className="text-5xl mb-4">🗑️</p><p>Архив пуст</p></div>
           ) : (
             <div className="space-y-3">
               {cards.map(card => (
-                <motion.div key={card.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8 }}
-                  className="bg-white/50 dark:bg-zinc-800/50 p-3 rounded-xl border border-white/80 dark:border-white/10 shadow-sm flex justify-between items-center gap-2">
+                <motion.div key={card.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8 }} className="bg-white/50 dark:bg-zinc-800/50 p-3 rounded-xl border border-white/80 dark:border-white/10 shadow-sm flex justify-between items-center gap-2">
                   <p className="text-sm text-slate-800 dark:text-slate-100 font-medium truncate flex-1">{card.title}</p>
-                  <button onClick={() => onRestore(card.id)} className="text-xs bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors font-medium whitespace-nowrap">
-                    Вернуть
-                  </button>
+                  <button onClick={() => onRestore(card.id)} className="text-xs bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors font-medium whitespace-nowrap">Вернуть</button>
                 </motion.div>
               ))}
             </div>
@@ -410,10 +339,7 @@ function ArchivePanel({ cards, onClose, onRestore, onClearAll }: { cards: CardTy
 
         {cards.length > 0 && (
           <div className="pt-4 mt-4 border-t border-slate-200/60 dark:border-white/10">
-            <button 
-              onClick={onClearAll} 
-              className="w-full bg-red-500/90 hover:bg-red-500 text-white py-2.5 rounded-xl text-sm font-medium transition-colors shadow-sm flex items-center justify-center gap-2"
-            >
+            <button onClick={onClearAll} className="w-full bg-red-500/90 hover:bg-red-500 text-white py-2.5 rounded-xl text-sm font-medium transition-colors shadow-sm flex items-center justify-center gap-2">
               <TrashIcon size={16} /> Очистить архив
             </button>
           </div>
@@ -434,24 +360,16 @@ export default function Home() {
   
   const [pendingDelete, setPendingDelete] = useState<ColumnType | null>(null);
   const [undoTimer, setUndoTimer] = useState(0);
-
   const [isDark, setIsDark] = useState(false);
 
-  // НОВОЕ: Проверка авторизации
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
+    supabase.auth.getSession().then(({ data: { session } }) => { setUser(session?.user ?? null); });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => { setUser(session?.user ?? null); });
     return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (!user) return; // Загружаем данные только если пользователь вошел
+    if (!user) return;
 
     async function fetchData() {
       const { data: cols } = await supabase.from('columns').select('*').order('position');
@@ -461,8 +379,7 @@ export default function Home() {
     }
     fetchData();
 
-    const channel = supabase
-      .channel('public:cards:columns')
+    const channel = supabase.channel('public:cards:columns')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cards' }, () => fetchData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'columns' }, () => fetchData())
       .subscribe();
@@ -472,32 +389,17 @@ export default function Home() {
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-      setIsDark(true);
-    }
+    if (savedTheme === 'dark') { document.documentElement.classList.add('dark'); setIsDark(true); }
   }, []);
 
   const toggleTheme = () => {
-    if (isDark) {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-      setIsDark(false);
-    } else {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-      setIsDark(true);
-    }
+    if (isDark) { document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light'); setIsDark(false); } 
+    else { document.documentElement.classList.add('dark'); localStorage.setItem('theme', 'dark'); setIsDark(true); }
   };
 
   useEffect(() => {
-    if (undoTimer > 0) {
-      const timer = setTimeout(() => setUndoTimer(prev => prev - 1), 1000);
-      return () => clearTimeout(timer);
-    } else if (pendingDelete) {
-      supabase.from('columns').delete().eq('id', pendingDelete.id).then();
-      setPendingDelete(null);
-    }
+    if (undoTimer > 0) { const timer = setTimeout(() => setUndoTimer(prev => prev - 1), 1000); return () => clearTimeout(timer); } 
+    else if (pendingDelete) { supabase.from('columns').delete().eq('id', pendingDelete.id).then(); setPendingDelete(null); }
   }, [undoTimer, pendingDelete]);
 
   const sensors = useSensors(
@@ -505,44 +407,29 @@ export default function Home() {
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } })
   );
 
-  // НОВОЕ: Функция выхода
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-  };
+  const handleLogout = async () => { await supabase.auth.signOut(); };
 
-  // НОВОЕ: Если пользователь не авторизован - показываем форму входа
   if (!user) {
     return (
       <main className="bg-slate-100 h-screen flex flex-col items-center justify-center overflow-hidden relative bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-zinc-800 dark:via-zinc-900 dark:to-neutral-900 transition-colors">
         <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-slate-300/40 dark:bg-zinc-700/30 rounded-full blur-[120px] pointer-events-none"></div>
         <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-slate-400/30 dark:bg-neutral-700/30 rounded-full blur-[120px] pointer-events-none"></div>
-        
         <AuthForm />
       </main>
     );
   }
 
-  function onDragStart(e: DragStartEvent) { 
-    if (e.active.data.current?.type === "Card") setActiveCard(e.active.data.current.card); 
-  }
+  function onDragStart(e: DragStartEvent) { if (e.active.data.current?.type === "Card") setActiveCard(e.active.data.current.card); }
 
   function onDragEnd(e: DragEndEvent) {
     const { active, over } = e;
     const draggedCard = active.data.current?.card as CardType | undefined;
     setActiveCard(null);
-    
     if (!over) return;
-
     const activeId = active.id;
     const overId = over.id;
 
-    if (overId === 'archive-zone') {
-      if (draggedCard) {
-        handleToggleArchive(draggedCard.id, true);
-      }
-      return;
-    }
-
+    if (overId === 'archive-zone') { if (draggedCard) { handleToggleArchive(draggedCard.id, true); } return; }
     if (activeId === overId) return;
 
     setCards((prev) => {
@@ -551,7 +438,6 @@ export default function Home() {
       const overCard = prev.find((c) => c.id === overId);
       const newColId = overCard ? overCard.column_id : overId;
       if (activeCard.column_id === newColId) return prev;
-
       supabase.from('cards').update({ column_id: newColId }).eq('id', activeId).then();
       return prev.map((c) => (c.id === activeId ? { ...c, column_id: newColId } : c));
     });
@@ -575,24 +461,28 @@ export default function Home() {
     }
   }
 
-  function handleDeleteColumn(col: ColumnType) {
-    setColumns((prev) => prev.filter((c) => c.id !== col.id));
-    setPendingDelete(col);
-    setUndoTimer(15);
-  }
-
+  function handleDeleteColumn(col: ColumnType) { setColumns((prev) => prev.filter((c) => c.id !== col.id)); setPendingDelete(col); setUndoTimer(15); }
   function handleUndoDelete() {
-    if (pendingDelete) {
-      setColumns((prev) => [...prev, pendingDelete].sort((a, b) => a.position - b.position));
-      setPendingDelete(null);
-      setUndoTimer(0);
-    }
+    if (pendingDelete) { setColumns((prev) => [...prev, pendingDelete].sort((a, b) => a.position - b.position)); setPendingDelete(null); setUndoTimer(0); }
   }
 
   async function handleUpdateCard(id: string, updates: Partial<CardType>) {
     setCards((prev) => prev.map((c) => (c.id === id ? { ...c, ...updates } : c)));
     const { error } = await supabase.from('cards').update(updates).eq('id', id);
     if (error) console.error("Ошибка обновления:", error);
+
+    // НОВОЕ: Отправка уведомления в Telegram, если есть ID
+    if (updates.telegram_ids) {
+      const chatIds = updates.telegram_ids.split(',').map(id => id.trim()).filter(Boolean);
+      if (chatIds.length > 0) {
+        // Отправляем запрос на наш внутренний API
+        fetch('/api/telegram', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chatIds, cardTitle: updates.title }),
+        }).catch(err => console.error("Telegram API error:", err));
+      }
+    }
   }
 
   async function handleToggleArchive(id: string, archive: boolean) {
@@ -603,17 +493,11 @@ export default function Home() {
 
   async function handleClearArchive() {
     if (!confirm("Удалить все карточки из архива безвозвратно?")) return;
-
     const idsToDelete = archivedCards.map(c => c.id);
     if (idsToDelete.length === 0) return;
-
     setCards(prev => prev.filter(c => !c.is_archived));
-    
     const { error } = await supabase.from('cards').delete().in('id', idsToDelete);
-    if (error) {
-      console.error("Ошибка очистки архива:", error);
-      alert("Не удалось очистить архив. Проверьте права доступа (RLS) в Supabase.");
-    }
+    if (error) { console.error("Ошибка очистки архива:", error); alert("Не удалось очистить архив."); }
   }
 
   const visibleCards = cards.filter(c => !c.is_archived);
@@ -626,68 +510,38 @@ export default function Home() {
 
       <header className="relative z-10 flex items-center justify-between p-4 bg-white/40 dark:bg-white/5 backdrop-blur-2xl border-b border-white/60 dark:border-white/10 shadow-sm">
         <h1 className="text-slate-800 dark:text-white font-semibold text-lg tracking-tight">NOVIKOV PRODUCTION</h1>
-        
         <div className="flex items-center gap-2">
-          <button 
-            onClick={toggleTheme} 
-            className="text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 p-2 rounded-xl transition-colors"
-            title="Сменить тему"
-          >
+          <button onClick={toggleTheme} className="text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 p-2 rounded-xl transition-colors" title="Сменить тему">
             {isDark ? <SunIcon /> : <MoonIcon />}
           </button>
-
           <button onClick={() => setIsArchiveOpen(true)} className="text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 px-3 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm font-medium">
-            <ArchiveIcon size={18} /> 
-            <span className="hidden sm:inline">Архив</span> 
-            <span className="bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded-full text-xs">{archivedCards.length}</span>
+            <ArchiveIcon size={18} /> <span className="hidden sm:inline">Архив</span> <span className="bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded-full text-xs">{archivedCards.length}</span>
           </button>
-
-          {/* НОВОЕ: Кнопка выхода */}
-          <button 
-            onClick={handleLogout} 
-            className="text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 p-2 rounded-xl transition-colors"
-            title="Выйти"
-          >
+          <button onClick={handleLogout} className="text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 p-2 rounded-xl transition-colors" title="Выйти">
             <LogoutIcon />
           </button>
         </div>
       </header>
 
-      <DndContext 
-        sensors={sensors} 
-        onDragStart={onDragStart} 
-        onDragEnd={onDragEnd}
-        onDragCancel={() => setActiveCard(null)}
-        measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
-      >
+      <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setActiveCard(null)} measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}>
         <div className="relative z-10 flex-1 flex gap-4 p-6 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <AnimatePresence>
             {columns.map((col) => {
               const colCards = visibleCards.filter((c) => c.column_id === col.id);
               return (
-                <motion.div key={col.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
-                  className="group bg-white/40 dark:bg-white/5 backdrop-blur-2xl w-80 rounded-3xl p-3 flex flex-col max-h-full flex-shrink-0 border border-white/60 dark:border-white/10 shadow-lg">
-                  
+                <motion.div key={col.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="group bg-white/40 dark:bg-white/5 backdrop-blur-2xl w-80 rounded-3xl p-3 flex flex-col max-h-full flex-shrink-0 border border-white/60 dark:border-white/10 shadow-lg">
                   <div className="flex items-center justify-between mb-3 px-3 pt-1">
                     <h2 className="font-semibold text-slate-700 dark:text-slate-200 text-sm uppercase tracking-wider">{col.title}</h2>
                     <div className="flex items-center gap-1">
                       <span className="bg-black/5 dark:bg-white/10 text-slate-600 dark:text-slate-300 text-xs px-2 py-1 rounded-full font-medium">{colCards.length}</span>
-                      <button 
-                        onClick={() => handleDeleteColumn(col)} 
-                        className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-full p-1 transition-all duration-200"
-                        title="Удалить колонку"
-                      >
-                        <TrashIcon size={16} />
-                      </button>
+                      <button onClick={() => handleDeleteColumn(col)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-full p-1 transition-all duration-200" title="Удалить колонку"><TrashIcon size={16} /></button>
                     </div>
                   </div>
-
                   <SortableContext id={col.id} items={colCards.map(c => c.id)} strategy={verticalListSortingStrategy}>
                     <DroppableContainer id={col.id}>
                       {colCards.map((card) => <Card key={card.id} card={card} onOpen={setEditingCard} />)}
                     </DroppableContainer>
                   </SortableContext>
-                  
                   <AddCard columnId={col.id} onAdd={handleAddCard} />
                 </motion.div>
               );
@@ -695,54 +549,29 @@ export default function Home() {
           </AnimatePresence>
 
           <div className="w-72 flex-shrink-0">
-            <button onClick={handleAddColumn} className="bg-white/30 dark:bg-white/5 backdrop-blur-xl border border-dashed border-slate-300 dark:border-white/10 hover:border-slate-400 dark:hover:border-white/30 hover:bg-white/50 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white font-medium w-full py-3 rounded-3xl flex items-center justify-center gap-2 transition-all shadow-sm">
-              + Добавить колонку
-            </button>
+            <button onClick={handleAddColumn} className="bg-white/30 dark:bg-white/5 backdrop-blur-xl border border-dashed border-slate-300 dark:border-white/10 hover:border-slate-400 dark:hover:border-white/30 hover:bg-white/50 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white font-medium w-full py-3 rounded-3xl flex items-center justify-center gap-2 transition-all shadow-sm">+ Добавить колонку</button>
           </div>
 
           <DragOverlay>
-            {activeCard && (
-              <div className="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-2xl p-3 rounded-2xl shadow-2xl w-72 cursor-grabbing border border-white dark:border-white/10 rotate-3">
-                <p className="text-sm text-slate-800 dark:text-slate-100 font-medium">{activeCard.title}</p>
-              </div>
-            )}
+            {activeCard && (<div className="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-2xl p-3 rounded-2xl shadow-2xl w-72 cursor-grabbing border border-white dark:border-white/10 rotate-3"><p className="text-sm text-slate-800 dark:text-slate-100 font-medium">{activeCard.title}</p></div>)}
           </DragOverlay>
         </div>
-
         <ArchiveDropZone isDragging={!!activeCard} />
       </DndContext>
 
       <AnimatePresence>
-        {editingCard && (
-          <CardModal card={editingCard} onClose={() => setEditingCard(null)} onUpdate={handleUpdateCard} onArchive={(id) => handleToggleArchive(id, true)} />
-        )}
+        {editingCard && (<CardModal card={editingCard} onClose={() => setEditingCard(null)} onUpdate={handleUpdateCard} onArchive={(id) => handleToggleArchive(id, true)} />)}
       </AnimatePresence>
 
       <AnimatePresence>
-        {isArchiveOpen && (
-          <ArchivePanel 
-            cards={archivedCards} 
-            onClose={() => setIsArchiveOpen(false)} 
-            onRestore={(id) => handleToggleArchive(id, false)} 
-            onClearAll={handleClearArchive} 
-          />
-        )}
+        {isArchiveOpen && (<ArchivePanel cards={archivedCards} onClose={() => setIsArchiveOpen(false)} onRestore={(id) => handleToggleArchive(id, false)} onClearAll={handleClearArchive} />)}
       </AnimatePresence>
 
       <AnimatePresence>
         {pendingDelete && (
-          <motion.div 
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-slate-800/80 dark:bg-zinc-100/80 backdrop-blur-xl text-white dark:text-zinc-900 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-4 border border-white/10 dark:border-black/10"
-            initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
-          >
+          <motion.div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-slate-800/80 dark:bg-zinc-100/80 backdrop-blur-xl text-white dark:text-zinc-900 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-4 border border-white/10 dark:border-black/10" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} transition={{ type: "spring", stiffness: 300, damping: 25 }}>
             <span className="text-sm font-medium">Колонка удалена</span>
-            <button 
-              onClick={handleUndoDelete} 
-              className="text-slate-300 dark:text-slate-700 font-semibold text-sm hover:text-white dark:hover:text-black transition-colors flex items-center gap-1 bg-white/10 dark:bg-black/10 px-3 py-1 rounded-lg"
-            >
-              Отменить <span className="text-xs w-5 text-center">({undoTimer})</span>
-            </button>
+            <button onClick={handleUndoDelete} className="text-slate-300 dark:text-slate-700 font-semibold text-sm hover:text-white dark:hover:text-black transition-colors flex items-center gap-1 bg-white/10 dark:bg-black/10 px-3 py-1 rounded-lg">Отменить <span className="text-xs w-5 text-center">({undoTimer})</span></button>
           </motion.div>
         )}
       </AnimatePresence>
