@@ -130,8 +130,8 @@ function AddCard({ columnId, onAdd }: { columnId: string, onAdd: (colId: string,
   return (<motion.form onSubmit={handleSubmit} className="mt-2 p-2 bg-white/60 dark:bg-zinc-800/60 backdrop-blur-xl rounded-xl border border-white/80 dark:border-white/10 shadow-sm" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}><textarea value={title} onChange={(e) => setTitle(e.target.value)} className="w-full p-2 bg-transparent rounded-lg outline-none focus:ring-1 focus:ring-slate-400 text-sm resize-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500" placeholder="Введите название..." autoFocus /><div className="flex gap-2 mt-2"><button type="submit" className="bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-slate-700 dark:hover:bg-white transition-colors shadow-sm">Добавить</button><button type="button" onClick={() => setIsAdding(false)} className="text-slate-500 dark:text-slate-400 px-3 py-1.5 rounded-lg text-sm hover:bg-black/5 dark:hover:bg-white/5 transition-colors">✕</button></div></motion.form>);
 }
 
-// --- Компонент выбора даты (переиспользуемый) ---
-function DateSection({ title, dateStr, timeStr, onChange }: { title: string, dateStr: string | null, timeStr: string | null, onChange: (date: string | null, time: string) => void }) {
+// --- Компонент выбора даты (с поддержкой диапазона времени) ---
+function DateSection({ title, dateStr, timeStr, onChange, useTimeRange = false }: { title: string, dateStr: string | null, timeStr: string | null, onChange: (date: string | null, time: string) => void, useTimeRange?: boolean }) {
   const [hasDate, setHasDate] = useState(!!dateStr);
   const parseDate = (d: string | null) => {
     if (!d) return new Date();
@@ -142,7 +142,14 @@ function DateSection({ title, dateStr, timeStr, onChange }: { title: string, dat
   const [day, setDay] = useState(initialDate.getDate());
   const [month, setMonth] = useState(initialDate.getMonth());
   const [year, setYear] = useState(initialDate.getFullYear());
-  const [time, setTime] = useState(timeStr || "");
+  
+  // Логика для обычного времени
+  const [time, setTime] = useState(!useTimeRange ? (timeStr || "") : "");
+
+  // Логика для диапазона времени (с 16:00 до 23:00)
+  const timeParts = useTimeRange && timeStr ? timeStr.split(' - ') : [];
+  const [startTime, setStartTime] = useState(timeParts[0] || "16:00");
+  const [endTime, setEndTime] = useState(timeParts[1] || "23:00");
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
@@ -150,18 +157,28 @@ function DateSection({ title, dateStr, timeStr, onChange }: { title: string, dat
   const currentYear = new Date().getFullYear();
   const yearsArray = Array.from({ length: 6 }, (_, i) => currentYear + i);
 
+  // Генерация времени для диапазона (16:00 - 23:00 с шагом 30 мин)
+  const timesArray = [];
+  for (let h = 16; h <= 23; h++) {
+    timesArray.push(`${String(h).padStart(2, '0')}:00`);
+    if (h < 23) timesArray.push(`${String(h).padStart(2, '0')}:30`);
+  }
+
   const formatDateString = (d: number, m: number, y: number) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 
-  const handleDayChange = (val: number) => { setDay(val); onChange(formatDateString(val, month, year), time); };
-  const handleMonthChange = (val: number) => { setMonth(val); onChange(formatDateString(day, val, year), time); };
-  const handleYearChange = (val: number) => { setYear(val); onChange(formatDateString(day, month, val), time); };
+  const handleDayChange = (val: number) => { setDay(val); onChange(formatDateString(val, month, year), useTimeRange ? `${startTime} - ${endTime}` : time); };
+  const handleMonthChange = (val: number) => { setMonth(val); onChange(formatDateString(day, val, year), useTimeRange ? `${startTime} - ${endTime}` : time); };
+  const handleYearChange = (val: number) => { setYear(val); onChange(formatDateString(day, month, val), useTimeRange ? `${startTime} - ${endTime}` : time); };
+  
   const handleTimeChange = (val: string) => { setTime(val); onChange(formatDateString(day, month, year), val); };
+  const handleStartTimeChange = (val: string) => { setStartTime(val); onChange(formatDateString(day, month, year), `${val} - ${endTime}`); };
+  const handleEndTimeChange = (val: string) => { setEndTime(val); onChange(formatDateString(day, month, year), `${startTime} - ${val}`); };
   
   const toggleDate = () => {
     const newHasDate = !hasDate;
     setHasDate(newHasDate);
     if (newHasDate) {
-      onChange(formatDateString(day, month, year), time);
+      onChange(formatDateString(day, month, year), useTimeRange ? `${startTime} - ${endTime}` : time);
     } else {
       onChange(null, "");
     }
@@ -194,17 +211,30 @@ function DateSection({ title, dateStr, timeStr, onChange }: { title: string, dat
               {yearsArray.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
-          <div className="flex items-center justify-center gap-3 border-t border-slate-100 dark:border-slate-700 pt-4">
-            <label className="text-sm text-slate-600 dark:text-slate-300 font-medium">Время:</label>
-            <input type="time" value={time} onChange={(e) => handleTimeChange(e.target.value)} className="bg-white/80 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-slate-400 font-medium" />
-          </div>
+          
+          {useTimeRange ? (
+            <div className="flex items-center justify-center gap-2 border-t border-slate-100 dark:border-slate-700 pt-4">
+              <select value={startTime} onChange={(e) => handleStartTimeChange(e.target.value)} className="bg-white/80 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-slate-400 font-medium cursor-pointer">
+                {timesArray.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+              <span className="text-slate-500">—</span>
+              <select value={endTime} onChange={(e) => handleEndTimeChange(e.target.value)} className="bg-white/80 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-slate-400 font-medium cursor-pointer">
+                {timesArray.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-3 border-t border-slate-100 dark:border-slate-700 pt-4">
+              <label className="text-sm text-slate-600 dark:text-slate-300 font-medium">Время:</label>
+              <input type="time" value={time} onChange={(e) => handleTimeChange(e.target.value)} className="bg-white/80 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-slate-400 font-medium" />
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-// --- НОВЫЙ Компонент: Выпадающий список пользователей ---
+// --- Выпадающий список пользователей ---
 function UserSelectDropdown({ users, selectedUsers, onToggle, onDeleteUser }: { users: TelegramUser[], selectedUsers: string[], onToggle: (chatId: string) => void, onDeleteUser: (chatId: string) => void }) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -223,9 +253,7 @@ function UserSelectDropdown({ users, selectedUsers, onToggle, onDeleteUser }: { 
 
       {isOpen && (
         <>
-          {/* Невидимый слой для закрытия при клике вне списка */}
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)}></div>
-          
           <div className="absolute z-50 mt-2 w-full bg-white dark:bg-zinc-800 rounded-xl shadow-xl max-h-60 overflow-y-auto border border-slate-200 dark:border-slate-700 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {users.length === 0 ? (
               <p className="text-xs text-slate-400 dark:text-slate-500 p-3 text-center">Нет пользователей. Напишите боту /start.</p>
@@ -235,25 +263,13 @@ function UserSelectDropdown({ users, selectedUsers, onToggle, onDeleteUser }: { 
                 const isSelected = selectedUsers.includes(user.chat_id);
                 return (
                   <div key={user.chat_id} className="flex justify-between items-center p-2.5 hover:bg-slate-100 dark:hover:bg-zinc-700/50 transition-colors">
-                    <button 
-                      type="button" 
-                      onClick={() => onToggle(user.chat_id)} 
-                      className="flex items-center gap-2.5 flex-1 text-left"
-                    >
-                      <span 
-                        style={isSelected ? { backgroundColor: color, borderColor: color } : { borderColor: color }} 
-                        className={`w-4 h-4 rounded-md border-2 flex items-center justify-center transition-colors`}
-                      >
+                    <button type="button" onClick={() => onToggle(user.chat_id)} className="flex items-center gap-2.5 flex-1 text-left">
+                      <span style={isSelected ? { backgroundColor: color, borderColor: color } : { borderColor: color }} className={`w-4 h-4 rounded-md border-2 flex items-center justify-center transition-colors`}>
                         {isSelected && <CheckIcon size={12} className="text-white" />}
                       </span>
                       <span className="text-sm text-slate-700 dark:text-slate-200">{user.name}</span>
                     </button>
-                    <button 
-                      type="button" 
-                      onClick={() => onDeleteUser(user.chat_id)} 
-                      className="text-slate-300 hover:text-red-500 transition-colors ml-2 p-1"
-                      title="Удалить пользователя из базы"
-                    >
+                    <button type="button" onClick={() => onDeleteUser(user.chat_id)} className="text-slate-300 hover:text-red-500 transition-colors ml-2 p-1" title="Удалить пользователя из базы">
                       <TrashIcon size={14} />
                     </button>
                   </div>
@@ -276,7 +292,6 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
   const [selectedUsers, setSelectedUsers] = useState<string[]>(card.telegram_ids ? card.telegram_ids.split(',').filter(Boolean) : []);
   const [copied, setCopied] = useState(false);
 
-  // Состояния для ДАТЫ и СРОКА
   const [dueDate, setDueDate] = useState<string | null>(card.due_date);
   const [dueTime, setDueTime] = useState<string>(card.due_time || "");
   const [deadlineDate, setDeadlineDate] = useState<string | null>(card.deadline_date);
@@ -318,15 +333,10 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
 
         <div className="mb-6">
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Уведомить в Telegram</h3>
-          <UserSelectDropdown 
-            users={telegramUsers} 
-            selectedUsers={selectedUsers} 
-            onToggle={toggleUser} 
-            onDeleteUser={onDeleteTelegramUser} 
-          />
+          <UserSelectDropdown users={telegramUsers} selectedUsers={selectedUsers} onToggle={toggleUser} onDeleteUser={onDeleteTelegramUser} />
         </div>
 
-        <DateSection title="ДАТА" dateStr={card.due_date} timeStr={card.due_time} onChange={(d, t) => { setDueDate(d); setDueTime(t); }} />
+        <DateSection title="ДАТА" dateStr={card.due_date} timeStr={card.due_time} useTimeRange={true} onChange={(d, t) => { setDueDate(d); setDueTime(t); }} />
         <DateSection title="Срок выполнения" dateStr={card.deadline_date} timeStr={card.deadline_time} onChange={(d, t) => { setDeadlineDate(d); setDeadlineTime(t); }} />
 
         <div className="mb-6">
@@ -460,7 +470,20 @@ export default function Home() {
     if (updates.telegram_ids) {
       const chatIds = updates.telegram_ids.split(',').filter(Boolean);
       if (chatIds.length > 0) {
-        fetch('/api/telegram', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chatIds, cardTitle: updates.title }) }).catch(err => console.error("Telegram API error:", err));
+        // НОВОЕ: Отправляем полные данные карточки для формирования сообщения
+        fetch('/api/telegram', { 
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' }, 
+          body: JSON.stringify({ 
+            chatIds, 
+            cardData: {
+              title: updates.title,
+              due_date: updates.due_date,
+              due_time: updates.due_time,
+              comment: updates.comment
+            }
+          }) 
+        }).catch(err => console.error("Telegram API error:", err));
       }
     }
   }
