@@ -11,6 +11,7 @@ import type { User } from "@supabase/supabase-js";
 
 type CardType = { 
   id: string; title: string; column_id: string; due_date?: string | null; due_time?: string | null; 
+  deadline_date?: string | null; deadline_time?: string | null;
   comment?: string | null; is_archived?: boolean; client_name?: string | null; phone_number?: string | null; telegram_ids?: string | null;
 };
 type ColumnType = { id: string; title: string; position: number };
@@ -34,7 +35,6 @@ const TrashIcon = ({ size = 16 }: { size?: number }) => (<svg xmlns="http://www.
 const CopyIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>);
 const CheckIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>);
 const LogoutIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" /></svg>);
-const XIcon = ({ size = 14 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>);
 
 // --- Форма входа ---
 function AuthForm() {
@@ -100,6 +100,11 @@ function Card({ card, telegramUsers, onOpen }: { card: CardType, telegramUsers: 
           return (<span key={u.chat_id} style={{ backgroundColor: color }} className="px-2 py-1 rounded-md text-white text-[11px] font-medium whitespace-nowrap">{u.name}</span>);
         })}
         {card.due_date && (<span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">📅 {new Date(card.due_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} {card.due_time || ''}</span>)}
+        {card.deadline_date && (
+          <span className="border border-green-500 text-green-600 dark:text-green-400 dark:border-green-400 px-2 py-1 rounded-md flex items-center gap-1">
+            ⏳ {new Date(card.deadline_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} {card.deadline_time || ''}
+          </span>
+        )}
         {card.comment && <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">💬</span>}
       </div>
     </motion.div>
@@ -124,6 +129,80 @@ function AddCard({ columnId, onAdd }: { columnId: string, onAdd: (colId: string,
   return (<motion.form onSubmit={handleSubmit} className="mt-2 p-2 bg-white/60 dark:bg-zinc-800/60 backdrop-blur-xl rounded-xl border border-white/80 dark:border-white/10 shadow-sm" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}><textarea value={title} onChange={(e) => setTitle(e.target.value)} className="w-full p-2 bg-transparent rounded-lg outline-none focus:ring-1 focus:ring-slate-400 text-sm resize-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500" placeholder="Введите название..." autoFocus /><div className="flex gap-2 mt-2"><button type="submit" className="bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-slate-700 dark:hover:bg-white transition-colors shadow-sm">Добавить</button><button type="button" onClick={() => setIsAdding(false)} className="text-slate-500 dark:text-slate-400 px-3 py-1.5 rounded-lg text-sm hover:bg-black/5 dark:hover:bg-white/5 transition-colors">✕</button></div></motion.form>);
 }
 
+// --- Компонент выбора даты (переиспользуемый) ---
+function DateSection({ title, dateStr, timeStr, onChange }: { title: string, dateStr: string | null, timeStr: string | null, onChange: (date: string | null, time: string) => void }) {
+  const [hasDate, setHasDate] = useState(!!dateStr);
+  const parseDate = (d: string | null) => {
+    if (!d) return new Date();
+    const [y, m, dy] = d.split('-').map(Number);
+    return new Date(y, m - 1, dy);
+  };
+  const initialDate = parseDate(dateStr);
+  const [day, setDay] = useState(initialDate.getDate());
+  const [month, setMonth] = useState(initialDate.getMonth());
+  const [year, setYear] = useState(initialDate.getFullYear());
+  const [time, setTime] = useState(timeStr || "");
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const monthsArray = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
+  const currentYear = new Date().getFullYear();
+  const yearsArray = Array.from({ length: 6 }, (_, i) => currentYear + i);
+
+  const formatDateString = (d: number, m: number, y: number) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+  const handleDayChange = (val: number) => { setDay(val); onChange(formatDateString(val, month, year), time); };
+  const handleMonthChange = (val: number) => { setMonth(val); onChange(formatDateString(day, val, year), time); };
+  const handleYearChange = (val: number) => { setYear(val); onChange(formatDateString(day, month, val), time); };
+  const handleTimeChange = (val: string) => { setTime(val); onChange(formatDateString(day, month, year), val); };
+  
+  const toggleDate = () => {
+    const newHasDate = !hasDate;
+    setHasDate(newHasDate);
+    if (newHasDate) {
+      onChange(formatDateString(day, month, year), time);
+    } else {
+      onChange(null, "");
+    }
+  };
+
+  return (
+    <div className="mb-6">
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{title}</h3>
+        {hasDate ? (
+          <button type="button" onClick={toggleDate} className="text-xs text-slate-400 hover:text-red-500 flex items-center gap-1">
+            <TrashIcon size={12} /> Убрать дату
+          </button>
+        ) : (
+          <button type="button" onClick={toggleDate} className="text-xs text-slate-400 hover:text-slate-600">
+            + Добавить дату
+          </button>
+        )}
+      </div>
+      {hasDate && (
+        <div className="flex flex-col gap-3 bg-white/80 dark:bg-zinc-800/50 p-4 rounded-2xl border border-white/80 dark:border-white/10 shadow-sm">
+          <div className="flex gap-2">
+            <select value={day} onChange={(e) => handleDayChange(Number(e.target.value))} className="flex-1 p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-slate-400 font-medium text-center cursor-pointer">
+              {daysArray.map(d => <option key={d} value={d}>{d}</option>)}
+            </select>
+            <select value={month} onChange={(e) => handleMonthChange(Number(e.target.value))} className="flex-[2] p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-slate-400 font-medium text-center cursor-pointer">
+              {monthsArray.map((m, i) => <option key={i} value={i}>{m}</option>)}
+            </select>
+            <select value={year} onChange={(e) => handleYearChange(Number(e.target.value))} className="flex-1 p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-slate-400 font-medium text-center cursor-pointer">
+              {yearsArray.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
+          <div className="flex items-center justify-center gap-3 border-t border-slate-100 dark:border-slate-700 pt-4">
+            <label className="text-sm text-slate-600 dark:text-slate-300 font-medium">Время:</label>
+            <input type="time" value={time} onChange={(e) => handleTimeChange(e.target.value)} className="bg-white/80 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-slate-400 font-medium" />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // --- МОДАЛЬНОЕ ОКНО КАРТОЧКИ ---
 function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDeleteTelegramUser }: { card: CardType, telegramUsers: TelegramUser[], onClose: () => void, onUpdate: (id: string, data: Partial<CardType>) => void, onArchive: (id: string) => void, onDeleteTelegramUser: (chatId: string) => void }) {
   const [title, setTitle] = useState(card.title);
@@ -133,30 +212,19 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
   const [selectedUsers, setSelectedUsers] = useState<string[]>(card.telegram_ids ? card.telegram_ids.split(',') : []);
   const [copied, setCopied] = useState(false);
 
-  // НОВОЕ: Логика выпадающих списков даты
-  const [hasDate, setHasDate] = useState(!!card.due_date);
-  const parseDate = (dateStr: string | null) => {
-    if (!dateStr) return new Date();
-    const [y, m, d] = dateStr.split('-').map(Number);
-    return new Date(y, m - 1, d);
-  };
-  const initialDate = parseDate(card.due_date || null);
-  
-  const [day, setDay] = useState(initialDate.getDate());
-  const [month, setMonth] = useState(initialDate.getMonth()); // 0-11
-  const [year, setYear] = useState(initialDate.getFullYear());
-  const [time, setTime] = useState(card.due_time || "");
-
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-  const monthsArray = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
-  const currentYear = new Date().getFullYear();
-  const yearsArray = Array.from({ length: 6 }, (_, i) => currentYear + i);
+  // Состояния для ДАТЫ и СРОКА
+  const [dueDate, setDueDate] = useState<string | null>(card.due_date);
+  const [dueTime, setDueTime] = useState<string>(card.due_time || "");
+  const [deadlineDate, setDeadlineDate] = useState<string | null>(card.deadline_date);
+  const [deadlineTime, setDeadlineTime] = useState<string>(card.deadline_time || "");
 
   const handleSave = () => {
-    const formattedDate = hasDate ? `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}` : null;
     const cleanTelegramIds = selectedUsers.length > 0 ? selectedUsers.join(',') : null;
-    onUpdate(card.id, { title, comment, due_date: formattedDate, due_time: time, client_name: clientName, phone_number: phoneNumber, telegram_ids: cleanTelegramIds });
+    onUpdate(card.id, { 
+      title, comment, due_date: dueDate, due_time: dueTime, 
+      deadline_date: deadlineDate, deadline_time: deadlineTime,
+      client_name: clientName, phone_number: phoneNumber, telegram_ids: cleanTelegramIds 
+    });
     onClose();
   };
 
@@ -192,53 +260,31 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
               const isSelected = selectedUsers.includes(user.chat_id);
               return (
                 <div key={user.chat_id} className="flex items-center bg-black/5 dark:bg-white/10 rounded-lg overflow-hidden">
-                  <button type="button" onClick={() => toggleUser(user.chat_id)} style={isSelected ? { backgroundColor: color, color: 'white' } : {}} className={`px-3 py-1.5 text-xs font-medium transition-colors flex items-center gap-1.5 ${isSelected ? '' : 'text-slate-600 dark:text-slate-300'}`}>
+                  <button 
+                    type="button"
+                    onClick={() => toggleUser(user.chat_id)}
+                    style={isSelected ? { backgroundColor: color, color: 'white' } : {}}
+                    className={`px-3 py-1.5 text-xs font-medium transition-colors flex items-center gap-1.5 ${isSelected ? '' : 'text-slate-600 dark:text-slate-300'}`}
+                  >
                     {!isSelected && <span style={{ backgroundColor: color }} className="w-2 h-2 rounded-full"></span>}
                     {user.name}
-                    {isSelected && <span className="ml-1 opacity-80"><XIcon size={12} /></span>}
                   </button>
-                  <button type="button" onClick={() => onDeleteTelegramUser(user.chat_id)} className="px-1.5 text-slate-400 hover:text-red-500 transition-colors" title="Удалить пользователя из базы"><TrashIcon size={12} /></button>
+                  <button 
+                    type="button"
+                    onClick={() => onDeleteTelegramUser(user.chat_id)}
+                    className="px-1.5 text-slate-400 hover:text-red-500 transition-colors"
+                    title="Удалить пользователя из базы"
+                  >
+                    <TrashIcon size={12} />
+                  </button>
                 </div>
               );
             }))}
           </div>
         </div>
 
-        {/* НОВОЕ: Блок выбора даты (День, Месяц, Год) */}
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Срок выполнения</h3>
-            {hasDate ? (
-              <button type="button" onClick={() => setHasDate(false)} className="text-xs text-slate-400 hover:text-red-500 flex items-center gap-1">
-                <TrashIcon size={12} /> Убрать дату
-              </button>
-            ) : (
-              <button type="button" onClick={() => setHasDate(true)} className="text-xs text-slate-400 hover:text-slate-600">
-                + Добавить дату
-              </button>
-            )}
-          </div>
-          
-          {hasDate && (
-            <div className="flex flex-col gap-3 bg-white/80 dark:bg-zinc-800/50 p-4 rounded-2xl border border-white/80 dark:border-white/10 shadow-sm">
-              <div className="flex gap-2">
-                <select value={day} onChange={(e) => setDay(Number(e.target.value))} className="flex-1 p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-slate-400 font-medium text-center cursor-pointer">
-                  {daysArray.map(d => <option key={d} value={d}>{d}</option>)}
-                </select>
-                <select value={month} onChange={(e) => setMonth(Number(e.target.value))} className="flex-[2] p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-slate-400 font-medium text-center cursor-pointer">
-                  {monthsArray.map((m, i) => <option key={i} value={i}>{m}</option>)}
-                </select>
-                <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="flex-1 p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-slate-400 font-medium text-center cursor-pointer">
-                  {yearsArray.map(y => <option key={y} value={y}>{y}</option>)}
-                </select>
-              </div>
-              <div className="flex items-center justify-center gap-3 border-t border-slate-100 dark:border-slate-700 pt-4">
-                <label className="text-sm text-slate-600 dark:text-slate-300 font-medium">Время:</label>
-                <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="bg-white/80 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-slate-400 font-medium" />
-              </div>
-            </div>
-          )}
-        </div>
+        <DateSection title="ДАТА" dateStr={card.due_date} timeStr={card.due_time} onChange={(d, t) => { setDueDate(d); setDueTime(t); }} />
+        <DateSection title="Срок выполнения" dateStr={card.deadline_date} timeStr={card.deadline_time} onChange={(d, t) => { setDeadlineDate(d); setDeadlineTime(t); }} />
 
         <div className="mb-6">
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Комментарий</h3>
