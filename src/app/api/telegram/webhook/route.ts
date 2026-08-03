@@ -31,15 +31,24 @@ export async function POST(req: Request) {
 
     let replyText = "";
 
-    if (text === '/stop' || text === '/unsubscribe') {
+    // НОВОЕ: Создаем клавиатуру с кнопками
+    const replyMarkup = JSON.stringify({
+      keyboard: [
+        [{ text: "🟢 Начать" }, { text: "🔴 Остановить" }]
+      ],
+      resize_keyboard: true // Кнопки будут компактными
+    });
+
+    // НОВОЕ: Обрабатываем как текстовые команды, так и нажатия кнопок
+    if (text === '/stop' || text === '/unsubscribe' || text === '🔴 Остановить') {
       if (existingUser) {
         await supabase.from('telegram_users').delete().eq('chat_id', chatId);
-        replyText = "Вы отписались от уведомлений NOVIKOV PRODUCTION.";
+        replyText = "Вы отписались от уведомлений NOVIKOV PRODUCTION. Ваше имя удалено из списка.";
       } else {
         replyText = "Вы еще не зарегистрированы.";
       }
     } else if (!existingUser) {
-      if (text === '/start') {
+      if (text === '/start' || text === '🟢 Начать') {
         replyText = "Добро пожаловать! Пожалуйста, введите ваше имя для регистрации в NOVIKOV PRODUCTION.";
       } else {
         const token = randomUUID();
@@ -62,10 +71,15 @@ export async function POST(req: Request) {
       replyText = `Вы уже зарегистрированы как ${existingUser.name}.\n\nВот ваша новая ссылка для входа на доску:\nhttps://nprodclone.vercel.app/?tg_token=${token}`;
     }
 
+    // Отправляем ответ с прикрепленной клавиатурой
     await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text: replyText }),
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: replyText,
+        reply_markup: replyMarkup // НОВОЕ: Передаем клавиатуру
+      }),
     });
 
     return NextResponse.json({ ok: true });
