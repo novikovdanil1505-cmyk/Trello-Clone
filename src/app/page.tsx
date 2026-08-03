@@ -19,6 +19,16 @@ type CardType = {
 type ColumnType = { id: string; title: string; position: number };
 type TelegramUser = { id: string; chat_id: string; name: string };
 
+// --- Палитра цветов для пользователей ---
+const USER_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'];
+const getUserColor = (id: string) => {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return USER_COLORS[Math.abs(hash) % USER_COLORS.length];
+};
+
 // --- ВЕКТОРНЫЕ ИКОНКИ ---
 const SunIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg>);
 const MoonIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg>);
@@ -77,16 +87,29 @@ function AuthForm() {
 }
 
 // --- Компонент Карточки ---
-function Card({ card, onOpen }: { card: CardType, onOpen: (card: CardType) => void }) {
+function Card({ card, telegramUsers, onOpen }: { card: CardType, telegramUsers: TelegramUser[], onOpen: (card: CardType) => void }) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id: card.id, data: { type: "Card", card } });
   const style = { transform: CSS.Transform.toString(transform), transition };
+  
+  // Находим данных пользователей, отмеченных в этой карточке
+  const tgIds = card.telegram_ids ? card.telegram_ids.split(',').filter(Boolean) : [];
+  const assignedUsers = telegramUsers.filter(u => tgIds.includes(u.chat_id));
+
   return (
     <motion.div ref={setNodeRef} {...attributes} {...listeners} style={style} layout initial={{ opacity: 0, scale: 0.8, y: 10 }} animate={{ opacity: isDragging ? 0.4 : 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} onClick={() => onOpen(card)} className={`bg-white/50 dark:bg-zinc-800/50 backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer active:cursor-grabbing border border-white/80 dark:border-white/10 shadow-sm hover:bg-white/80 dark:hover:bg-zinc-800/80 transition-colors select-none`}>
       <p className="text-sm text-slate-800 dark:text-slate-100 font-medium mb-1">{card.title}</p>
       <div className="flex flex-wrap gap-2 mt-2 text-xs text-slate-500 dark:text-slate-400">
+        {/* НОВОЕ: Цветные маркеры пользователей вместо самолета */}
+        {assignedUsers.map(u => {
+          const color = getUserColor(u.chat_id);
+          return (
+            <span key={u.chat_id} style={{ backgroundColor: color }} className="px-1.5 py-1 rounded-md flex items-center gap-1 text-white text-[10px] font-bold uppercase">
+              {u.name.charAt(0)}
+            </span>
+          );
+        })}
         {card.client_name && (<span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1 truncate max-w-[120px]">👤 {card.client_name}</span>)}
         {card.phone_number && (<span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">📞 {card.phone_number}</span>)}
-        {card.telegram_ids && (<span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">✈️ {card.telegram_ids.split(',').length}</span>)}
         {card.due_date && (<span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">📅 {new Date(card.due_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} {card.due_time || ''}</span>)}
         {card.comment && <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">💬</span>}
       </div>
@@ -125,7 +148,7 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
 
   const handleSave = () => {
     const formattedDate = date ? date.toISOString().split('T')[0] : null;
-    const cleanTelegramIds = selectedUsers.join(',');
+    const cleanTelegramIds = selectedUsers.filter(Boolean).join(',');
     onUpdate(card.id, { title, comment, due_date: formattedDate, due_time: time, client_name: clientName, phone_number: phoneNumber, telegram_ids: cleanTelegramIds });
     onClose();
   };
@@ -143,7 +166,6 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
           <button onClick={onClose} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 text-2xl ml-4 leading-none">&times;</button>
         </div>
 
-        {/* Блок данных клиента */}
         <div className="mb-6">
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Данные клиента</h3>
           <div className="space-y-3">
@@ -155,32 +177,37 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
           </div>
         </div>
 
-        {/* Блок выбора пользователей Telegram */}
         <div className="mb-6">
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Уведомить в Telegram</h3>
           <div className="flex flex-wrap gap-2 p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl">
             {telegramUsers.length === 0 ? (
               <p className="text-xs text-slate-400 dark:text-slate-500 py-1">Нет зарегистрированных пользователей. Напишите боту /start.</p>
             ) : (
-              telegramUsers.map(user => (
-                <div key={user.chat_id} className="flex items-center bg-black/5 dark:bg-white/10 rounded-lg overflow-hidden">
-                  <button 
-                    type="button"
-                    onClick={() => toggleUser(user.chat_id)}
-                    className={`px-3 py-1.5 text-xs font-medium transition-colors ${selectedUsers.includes(user.chat_id) ? 'bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-900' : 'text-slate-600 dark:text-slate-300'}`}
-                  >
-                    {user.name}
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={() => onDeleteTelegramUser(user.chat_id)}
-                    className="px-1.5 text-slate-400 hover:text-red-500 transition-colors"
-                    title="Удалить пользователя"
-                  >
-                    <TrashIcon size={12} />
-                  </button>
-                </div>
-              ))
+              telegramUsers.map(user => {
+                const color = getUserColor(user.chat_id);
+                const isSelected = selectedUsers.includes(user.chat_id);
+                return (
+                  <div key={user.chat_id} className="flex items-center bg-black/5 dark:bg-white/10 rounded-lg overflow-hidden">
+                    <button 
+                      type="button"
+                      onClick={() => toggleUser(user.chat_id)}
+                      style={isSelected ? { backgroundColor: color, color: 'white' } : {}}
+                      className={`px-3 py-1.5 text-xs font-medium transition-colors flex items-center gap-1.5 ${isSelected ? '' : 'text-slate-600 dark:text-slate-300'}`}
+                    >
+                      {!isSelected && <span style={{ backgroundColor: color }} className="w-2 h-2 rounded-full"></span>}
+                      {user.name}
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => onDeleteTelegramUser(user.chat_id)}
+                      className="px-1.5 text-slate-400 hover:text-red-500 transition-colors"
+                      title="Удалить пользователя"
+                    >
+                      <TrashIcon size={12} />
+                    </button>
+                  </div>
+                );
+              })
             )}
           </div>
         </div>
@@ -325,7 +352,6 @@ export default function Home() {
     if (error) { console.error("Ошибка очистки архива:", error); alert("Не удалось очистить архив."); }
   }
 
-  // НОВАЯ ФУНКЦИЯ: Удаление пользователя Telegram
   async function handleDeleteTelegramUser(chatId: string) {
     if (!confirm("Удалить этого пользователя из списка уведомлений?")) return;
     setTelegramUsers(prev => prev.filter(u => u.chat_id !== chatId));
@@ -353,19 +379,23 @@ export default function Home() {
           <AnimatePresence>
             {columns.map((col) => {
               const colCards = visibleCards.filter((c) => c.column_id === col.id);
-              return (<motion.div key={col.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="group bg-white/40 dark:bg-white/5 backdrop-blur-2xl w-80 rounded-3xl p-3 flex flex-col max-h-full flex-shrink-0 border border-white/60 dark:border-white/10 shadow-lg">
-                <div className="flex items-center justify-between mb-3 px-3 pt-1">
-                  <h2 className="font-semibold text-slate-700 dark:text-slate-200 text-sm uppercase tracking-wider">{col.title}</h2>
-                  <div className="flex items-center gap-1">
-                    <span className="bg-black/5 dark:bg-white/10 text-slate-600 dark:text-slate-300 text-xs px-2 py-1 rounded-full font-medium">{colCards.length}</span>
-                    <button onClick={() => handleDeleteColumn(col)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-full p-1 transition-all duration-200" title="Удалить колонку"><TrashIcon size={16} /></button>
+              return (
+                <motion.div key={col.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="group bg-white/40 dark:bg-white/5 backdrop-blur-2xl w-80 rounded-3xl p-3 flex flex-col max-h-full flex-shrink-0 border border-white/60 dark:border-white/10 shadow-lg">
+                  <div className="flex items-center justify-between mb-3 px-3 pt-1">
+                    <h2 className="font-semibold text-slate-700 dark:text-slate-200 text-sm uppercase tracking-wider">{col.title}</h2>
+                    <div className="flex items-center gap-1">
+                      <span className="bg-black/5 dark:bg-white/10 text-slate-600 dark:text-slate-300 text-xs px-2 py-1 rounded-full font-medium">{colCards.length}</span>
+                      <button onClick={() => handleDeleteColumn(col)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-full p-1 transition-all duration-200" title="Удалить колонку"><TrashIcon size={16} /></button>
+                    </div>
                   </div>
-                </div>
-                <SortableContext id={col.id} items={colCards.map(c => c.id)} strategy={verticalListSortingStrategy}>
-                  <DroppableContainer id={col.id}>{colCards.map((card) => <Card key={card.id} card={card} onOpen={setEditingCard} />)}</DroppableContainer>
-                </SortableContext>
-                <AddCard columnId={col.id} onAdd={handleAddCard} />
-              </motion.div>);
+                  <SortableContext id={col.id} items={colCards.map(c => c.id)} strategy={verticalListSortingStrategy}>
+                    <DroppableContainer id={col.id}>
+                      {colCards.map((card) => <Card key={card.id} card={card} telegramUsers={telegramUsers} onOpen={setEditingCard} />)}
+                    </DroppableContainer>
+                  </SortableContext>
+                  <AddCard columnId={col.id} onAdd={handleAddCard} />
+                </motion.div>
+              );
             })}
           </AnimatePresence>
           <div className="w-72 flex-shrink-0">
