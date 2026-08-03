@@ -113,7 +113,7 @@ function AddCard({ columnId, onAdd }: { columnId: string, onAdd: (colId: string,
 }
 
 // --- МОДАЛЬНОЕ ОКНО КАРТОЧКИ ---
-function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive }: { card: CardType, telegramUsers: TelegramUser[], onClose: () => void, onUpdate: (id: string, data: Partial<CardType>) => void, onArchive: (id: string) => void }) {
+function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDeleteTelegramUser }: { card: CardType, telegramUsers: TelegramUser[], onClose: () => void, onUpdate: (id: string, data: Partial<CardType>) => void, onArchive: (id: string) => void, onDeleteTelegramUser: (chatId: string) => void }) {
   const [title, setTitle] = useState(card.title);
   const [comment, setComment] = useState(card.comment || "");
   const [date, setDate] = useState<Date | undefined>(card.due_date ? new Date(card.due_date) : undefined);
@@ -155,7 +155,7 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive }: { card
           </div>
         </div>
 
-        {/* НОВОЕ: Блок выбора пользователей Telegram */}
+        {/* Блок выбора пользователей Telegram */}
         <div className="mb-6">
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Уведомить в Telegram</h3>
           <div className="flex flex-wrap gap-2 p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl">
@@ -163,14 +163,23 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive }: { card
               <p className="text-xs text-slate-400 dark:text-slate-500 py-1">Нет зарегистрированных пользователей. Напишите боту /start.</p>
             ) : (
               telegramUsers.map(user => (
-                <button 
-                  key={user.chat_id} 
-                  type="button"
-                  onClick={() => toggleUser(user.chat_id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${selectedUsers.includes(user.chat_id) ? 'bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-900' : 'bg-black/5 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-black/10 dark:hover:bg-white/20'}`}
-                >
-                  {user.name}
-                </button>
+                <div key={user.chat_id} className="flex items-center bg-black/5 dark:bg-white/10 rounded-lg overflow-hidden">
+                  <button 
+                    type="button"
+                    onClick={() => toggleUser(user.chat_id)}
+                    className={`px-3 py-1.5 text-xs font-medium transition-colors ${selectedUsers.includes(user.chat_id) ? 'bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-900' : 'text-slate-600 dark:text-slate-300'}`}
+                  >
+                    {user.name}
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => onDeleteTelegramUser(user.chat_id)}
+                    className="px-1.5 text-slate-400 hover:text-red-500 transition-colors"
+                    title="Удалить пользователя"
+                  >
+                    <TrashIcon size={12} />
+                  </button>
+                </div>
               ))
             )}
           </div>
@@ -295,7 +304,6 @@ export default function Home() {
     const { error } = await supabase.from('cards').update(updates).eq('id', id);
     if (error) console.error("Ошибка обновления:", error);
 
-    // Отправка уведомления в Telegram
     if (updates.telegram_ids) {
       const chatIds = updates.telegram_ids.split(',').filter(Boolean);
       if (chatIds.length > 0) {
@@ -315,6 +323,14 @@ export default function Home() {
     if (idsToDelete.length === 0) return; setCards(prev => prev.filter(c => !c.is_archived));
     const { error } = await supabase.from('cards').delete().in('id', idsToDelete);
     if (error) { console.error("Ошибка очистки архива:", error); alert("Не удалось очистить архив."); }
+  }
+
+  // НОВАЯ ФУНКЦИЯ: Удаление пользователя Telegram
+  async function handleDeleteTelegramUser(chatId: string) {
+    if (!confirm("Удалить этого пользователя из списка уведомлений?")) return;
+    setTelegramUsers(prev => prev.filter(u => u.chat_id !== chatId));
+    const { error } = await supabase.from('telegram_users').delete().eq('chat_id', chatId);
+    if (error) console.error("Ошибка удаления пользователя:", error);
   }
 
   const visibleCards = cards.filter(c => !c.is_archived);
@@ -359,7 +375,7 @@ export default function Home() {
         </div>
         <ArchiveDropZone isDragging={!!activeCard} />
       </DndContext>
-      <AnimatePresence>{editingCard && (<CardModal card={editingCard} telegramUsers={telegramUsers} onClose={() => setEditingCard(null)} onUpdate={handleUpdateCard} onArchive={(id) => handleToggleArchive(id, true)} />)}</AnimatePresence>
+      <AnimatePresence>{editingCard && (<CardModal card={editingCard} telegramUsers={telegramUsers} onClose={() => setEditingCard(null)} onUpdate={handleUpdateCard} onArchive={(id) => handleToggleArchive(id, true)} onDeleteTelegramUser={handleDeleteTelegramUser} />)}</AnimatePresence>
       <AnimatePresence>{isArchiveOpen && (<ArchivePanel cards={archivedCards} onClose={() => setIsArchiveOpen(false)} onRestore={(id) => handleToggleArchive(id, false)} onClearAll={handleClearArchive} />)}</AnimatePresence>
       <AnimatePresence>{pendingDelete && (<motion.div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-slate-800/80 dark:bg-zinc-100/80 backdrop-blur-xl text-white dark:text-zinc-900 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-4 border border-white/10 dark:border-black/10" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} transition={{ type: "spring", stiffness: 300, damping: 25 }}><span className="text-sm font-medium">Колонка удалена</span><button onClick={handleUndoDelete} className="text-slate-300 dark:text-slate-700 font-semibold text-sm hover:text-white dark:hover:text-black transition-colors flex items-center gap-1 bg-white/10 dark:bg-black/10 px-3 py-1 rounded-lg">Отменить <span className="text-xs w-5 text-center">({undoTimer})</span></button></motion.div>)}</AnimatePresence>
     </main>

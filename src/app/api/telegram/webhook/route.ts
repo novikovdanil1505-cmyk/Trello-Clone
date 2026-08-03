@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Говорим Next.js, что этот маршрут не нужно генерировать при сборке
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
@@ -13,7 +12,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
   }
 
-  // Создаем клиента внутри функции запроса
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   try {
@@ -23,7 +21,6 @@ export async function POST(req: Request) {
 
     if (!chatId || !text) return NextResponse.json({ ok: true });
 
-    // Проверяем, есть ли уже такой пользователь в базе
     const { data: existingUser } = await supabase
       .from('telegram_users')
       .select('*')
@@ -32,7 +29,15 @@ export async function POST(req: Request) {
 
     let replyText = "";
 
-    if (!existingUser) {
+    if (text === '/stop' || text === '/unsubscribe') {
+      // НОВОЕ: Удаление пользователя по команде /stop
+      if (existingUser) {
+        await supabase.from('telegram_users').delete().eq('chat_id', chatId);
+        replyText = "Вы отписались от уведомлений NOVIKOV PRODUCTION. Ваше имя удалено из списка. Чтобы вернуться, напишите /start.";
+      } else {
+        replyText = "Вы еще не зарегистрированы.";
+      }
+    } else if (!existingUser) {
       if (text === '/start') {
         replyText = "Добро пожаловать! Пожалуйста, введите ваше имя для регистрации в NOVIKOV PRODUCTION.";
       } else {
@@ -52,7 +57,6 @@ export async function POST(req: Request) {
       replyText = `Вы уже зарегистрированы как ${existingUser.name}.`;
     }
 
-    // Отправляем ответ пользователю в Telegram
     await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
