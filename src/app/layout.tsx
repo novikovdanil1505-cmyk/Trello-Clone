@@ -28,6 +28,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     ><head>
         <script src="https://telegram.org/js/telegram-web-app.js"></script>
+         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
