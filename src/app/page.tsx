@@ -19,7 +19,7 @@ type CardType = {
 type ColumnType = { id: string; title: string; position: number };
 type TelegramUser = { id: string; chat_id: string; name: string };
 
-// --- Палитра цветов ---
+// --- Палитра цветов для пользователей ---
 const USER_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'];
 const getUserColor = (id: string) => {
   let hash = 0;
@@ -29,7 +29,7 @@ const getUserColor = (id: string) => {
   return USER_COLORS[Math.abs(hash) % USER_COLORS.length];
 };
 
-// --- Иконки ---
+// --- ВЕКТОРНЫЕ ИКОНКИ ---
 const SunIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg>);
 const MoonIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg>);
 const ArchiveIcon = ({ size = 24 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="5" x="2" y="3" rx="1" /><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" /><path d="M10 12h4" /></svg>);
@@ -37,8 +37,9 @@ const TrashIcon = ({ size = 16 }: { size?: number }) => (<svg xmlns="http://www.
 const CopyIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>);
 const CheckIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>);
 const LogoutIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" /></svg>);
+const XIcon = ({ size = 14 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>);
 
-// --- Форма входа ---
+// --- ФОРМА АВТОРИЗАЦИИ ---
 function AuthForm() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
@@ -86,10 +87,11 @@ function AuthForm() {
   );
 }
 
-// --- Карточка ---
+// --- Компонент Карточки ---
 function Card({ card, telegramUsers, onOpen }: { card: CardType, telegramUsers: TelegramUser[], onOpen: (card: CardType) => void }) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id: card.id, data: { type: "Card", card } });
   const style = { transform: CSS.Transform.toString(transform), transition };
+  
   const tgIds = card.telegram_ids ? card.telegram_ids.split(',').filter(Boolean) : [];
   const assignedUsers = telegramUsers.filter(u => tgIds.includes(u.chat_id));
 
@@ -99,7 +101,11 @@ function Card({ card, telegramUsers, onOpen }: { card: CardType, telegramUsers: 
       <div className="flex flex-wrap gap-2 mt-2 text-xs text-slate-500 dark:text-slate-400">
         {assignedUsers.map(u => {
           const color = getUserColor(u.chat_id);
-          return (<span key={u.chat_id} style={{ backgroundColor: color }} className="px-2 py-1 rounded-md text-white text-[11px] font-medium whitespace-nowrap">{u.name}</span>);
+          return (
+            <span key={u.chat_id} style={{ backgroundColor: color }} className="px-2 py-1 rounded-md text-white text-[11px] font-medium whitespace-nowrap">
+              {u.name}
+            </span>
+          );
         })}
         {card.due_date && (<span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">📅 {new Date(card.due_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} {card.due_time || ''}</span>)}
         {card.comment && <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">💬</span>}
@@ -126,7 +132,7 @@ function AddCard({ columnId, onAdd }: { columnId: string, onAdd: (colId: string,
   return (<motion.form onSubmit={handleSubmit} className="mt-2 p-2 bg-white/60 dark:bg-zinc-800/60 backdrop-blur-xl rounded-xl border border-white/80 dark:border-white/10 shadow-sm" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}><textarea value={title} onChange={(e) => setTitle(e.target.value)} className="w-full p-2 bg-transparent rounded-lg outline-none focus:ring-1 focus:ring-slate-400 text-sm resize-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500" placeholder="Введите название..." autoFocus /><div className="flex gap-2 mt-2"><button type="submit" className="bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-slate-700 dark:hover:bg-white transition-colors shadow-sm">Добавить</button><button type="button" onClick={() => setIsAdding(false)} className="text-slate-500 dark:text-slate-400 px-3 py-1.5 rounded-lg text-sm hover:bg-black/5 dark:hover:bg-white/5 transition-colors">✕</button></div></motion.form>);
 }
 
-// --- Модалка ---
+// --- МОДАЛЬНОЕ ОКНО КАРТОЧКИ ---
 function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDeleteTelegramUser }: { card: CardType, telegramUsers: TelegramUser[], onClose: () => void, onUpdate: (id: string, data: Partial<CardType>) => void, onArchive: (id: string) => void, onDeleteTelegramUser: (chatId: string) => void }) {
   const [title, setTitle] = useState(card.title);
   const [comment, setComment] = useState(card.comment || "");
@@ -134,12 +140,13 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
   const [time, setTime] = useState(card.due_time || "");
   const [clientName, setClientName] = useState(card.client_name || "");
   const [phoneNumber, setPhoneNumber] = useState(card.phone_number || "");
-  const [selectedUsers, setSelectedUsers] = useState<string[]>(card.telegram_ids ? card.telegram_ids.split(',') : []);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>(card.telegram_ids ? card.telegram_ids.split(',').filter(Boolean) : []);
   const [copied, setCopied] = useState(false);
 
   const handleSave = () => {
     const formattedDate = date ? date.toISOString().split('T')[0] : null;
-    const cleanTelegramIds = selectedUsers.filter(Boolean).join(',');
+    // ИСПРАВЛЕНО: Если нет выбранных пользователей, сохраняем null, чтобы маркеры исчезли
+    const cleanTelegramIds = selectedUsers.length > 0 ? selectedUsers.join(',') : null;
     onUpdate(card.id, { title, comment, due_date: formattedDate, due_time: time, client_name: clientName, phone_number: phoneNumber, telegram_ids: cleanTelegramIds });
     onClose();
   };
@@ -151,6 +158,7 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
   return (
     <motion.div className="fixed inset-0 bg-black/20 dark:bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
       <motion.div className="bg-white/60 dark:bg-zinc-900/80 backdrop-blur-2xl w-full max-w-md rounded-3xl p-6 border border-white/80 dark:border-white/10 shadow-2xl overflow-y-auto max-h-[90vh] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} onClick={(e) => e.stopPropagation()}>
+        
         <div className="flex justify-between items-start mb-6">
           <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="bg-transparent text-xl font-semibold text-slate-800 dark:text-white outline-none w-full focus:border-b focus:border-slate-400" />
           <button onClick={onClose} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 text-2xl ml-4 leading-none">&times;</button>
@@ -170,19 +178,36 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
         <div className="mb-6">
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Уведомить в Telegram</h3>
           <div className="flex flex-wrap gap-2 p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl">
-            {telegramUsers.length === 0 ? (<p className="text-xs text-slate-400 dark:text-slate-500 py-1">Нет зарегистрированных пользователей. Напишите боту /start.</p>) : (telegramUsers.map(user => {
-              const color = getUserColor(user.chat_id);
-              const isSelected = selectedUsers.includes(user.chat_id);
-              return (
-                <div key={user.chat_id} className="flex items-center bg-black/5 dark:bg-white/10 rounded-lg overflow-hidden">
-                  <button type="button" onClick={() => toggleUser(user.chat_id)} style={isSelected ? { backgroundColor: color, color: 'white' } : {}} className={`px-3 py-1.5 text-xs font-medium transition-colors flex items-center gap-1.5 ${isSelected ? '' : 'text-slate-600 dark:text-slate-300'}`}>
-                    {!isSelected && <span style={{ backgroundColor: color }} className="w-2 h-2 rounded-full"></span>}
-                    {user.name}
-                  </button>
-                  <button type="button" onClick={() => onDeleteTelegramUser(user.chat_id)} className="px-1.5 text-slate-400 hover:text-red-500 transition-colors" title="Удалить пользователя"><TrashIcon size={12} /></button>
-                </div>
-              );
-            }))}
+            {telegramUsers.length === 0 ? (
+              <p className="text-xs text-slate-400 dark:text-slate-500 py-1">Нет зарегистрированных пользователей. Напишите боту /start.</p>
+            ) : (
+              telegramUsers.map(user => {
+                const color = getUserColor(user.chat_id);
+                const isSelected = selectedUsers.includes(user.chat_id);
+                return (
+                  <div key={user.chat_id} className="flex items-center bg-black/5 dark:bg-white/10 rounded-lg overflow-hidden">
+                    <button 
+                      type="button"
+                      onClick={() => toggleUser(user.chat_id)}
+                      style={isSelected ? { backgroundColor: color, color: 'white' } : {}}
+                      className={`px-3 py-1.5 text-xs font-medium transition-colors flex items-center gap-1.5 ${isSelected ? '' : 'text-slate-600 dark:text-slate-300'}`}
+                    >
+                      {!isSelected && <span style={{ backgroundColor: color }} className="w-2 h-2 rounded-full"></span>}
+                      {user.name}
+                      {isSelected && <span className="ml-1 opacity-80"><XIcon size={12} /></span>}
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => onDeleteTelegramUser(user.chat_id)}
+                      className="px-1.5 text-slate-400 hover:text-red-500 transition-colors"
+                      title="Удалить пользователя из базы"
+                    >
+                      <TrashIcon size={12} />
+                    </button>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
 
@@ -249,7 +274,6 @@ export default function Home() {
     supabase.auth.getSession().then(({ data: { session } }) => { setUser(session?.user ?? null); });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => { setUser(session?.user ?? null); });
     
-    // НОВОЕ: Проверка токена из URL (Магическая ссылка)
     const params = new URLSearchParams(window.location.search);
     const token = params.get('tg_token');
     if (token) {
@@ -260,7 +284,6 @@ export default function Home() {
       }).then(res => res.json()).then(data => {
         if (data.chat_id) {
           setTgUser({ name: data.name, chat_id: data.chat_id });
-          // Очищаем URL от токена, чтобы не потереть случайно ссылку
           window.history.replaceState({}, document.title, window.location.pathname);
         }
       });
@@ -270,7 +293,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (!user && !tgUser) return; // Загружаем данные только если вошли (через Email или по ссылке)
+    if (!user && !tgUser) return;
     async function fetchData() {
       const { data: cols } = await supabase.from('columns').select('*').order('position');
       const { data: cardsData } = await supabase.from('cards').select('*').order('position');
@@ -292,13 +315,11 @@ export default function Home() {
   useEffect(() => { if (undoTimer > 0) { const timer = setTimeout(() => setUndoTimer(prev => prev - 1), 1000); return () => clearTimeout(timer); } else if (pendingDelete) { supabase.from('columns').delete().eq('id', pendingDelete.id).then(); setPendingDelete(null); } }, [undoTimer, pendingDelete]);
   const sensors = useSensors(useSensor(MouseSensor, { activationConstraint: { distance: 10 } }), useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }));
   
-  // НОВОЕ: Выход очищает обе сессии
   const handleLogout = async () => {
     if (user) await supabase.auth.signOut();
     if (tgUser) setTgUser(null);
   };
 
-  // НОВОЕ: Если нет ни Supabase юзера, ни Telegram юзера — показываем форму входа
   if (!user && !tgUser) {
     return (<main className="bg-slate-100 h-screen flex flex-col items-center justify-center overflow-hidden relative bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-zinc-800 dark:via-zinc-900 dark:to-neutral-900 transition-colors"><div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-slate-300/40 dark:bg-zinc-700/30 rounded-full blur-[120px] pointer-events-none"></div><div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-slate-400/30 dark:bg-neutral-700/30 rounded-full blur-[120px] pointer-events-none"></div><AuthForm /></main>);
   }
