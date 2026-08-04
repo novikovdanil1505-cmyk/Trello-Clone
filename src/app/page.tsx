@@ -396,15 +396,12 @@ export default function Home() {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    // НОВОЕ: Проверка, открыт ли сайт внутри Telegram
     const tg = (window as any).Telegram?.WebApp;
     
     if (tg) {
-      // Мы внутри Telegram Mini App
       tg.ready();
-      tg.expand(); // Разворачиваем на весь экран
+      tg.expand();
       
-      // 1. Синхронизируем тему с настройками Telegram
       if (tg.colorScheme === 'dark') {
         document.documentElement.classList.add('dark');
         setIsDark(true);
@@ -415,25 +412,26 @@ export default function Home() {
         localStorage.setItem('theme', 'light');
       }
       
-      // 2. Автоматический вход по данным из Telegram
       const tgUserData = tg.initDataUnsafe?.user;
       if (tgUserData && tgUserData.id) {
         const chatId = tgUserData.id.toString();
-        // Ищем пользователя в базе
-        supabase.from('telegram_users').select('*').eq('chat_id', chatId).single().then(({ data }) => {
+        // ИСПРАВЛЕНО: используем maybeSingle()
+        supabase.from('telegram_users').select('*').eq('chat_id', chatId).maybeSingle().then(({ data }) => {
           if (data) {
             setTgUser({ name: data.name, chat_id: data.chat_id });
           } else {
-            // Если пользователь открыл Mini App, но еще не писал боту /start — регистрируем его автоматически
             const newName = tgUserData.first_name || "Telegram User";
             supabase.from('telegram_users').insert([{ chat_id: chatId, name: newName, username: tgUserData.username }]).select().single().then(({ data: newUser }) => {
-              if (newUser) setTgUser({ name: newUser.name, chat_id: newUser.chat_id });
+              if (newUser) {
+                setTgUser({ name: newUser.name, chat_id: newUser.chat_id });
+                // НОВОЕ: Сразу добавляем пользователя в локальный список
+                setTelegramUsers(prev => [...prev, newUser]);
+              }
             });
           }
         });
       }
     } else {
-      // Обычный браузер (оставляем старую логику)
       supabase.auth.getSession().then(({ data: { session } }) => { setUser(session?.user ?? null); });
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => { setUser(session?.user ?? null); });
       
