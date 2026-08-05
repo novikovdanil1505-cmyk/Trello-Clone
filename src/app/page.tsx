@@ -14,8 +14,9 @@ type CardType = {
   comment?: string | null; is_archived?: boolean; client_name?: string | null; phone_number?: string | null; telegram_ids?: string | null;
   position?: number; payment_status?: string | null;
 };
-type ColumnType = { id: string; title: string; position: number };
+type ColumnType = { id: string; title: string; position: number; board_id: string };
 type TelegramUser = { id: string; chat_id: string; name: string };
+type BoardType = { id: string; name: string };
 
 const USER_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'];
 const getUserColor = (id: string) => {
@@ -37,7 +38,6 @@ const TrashIcon = ({ size = 16 }: { size?: number }) => (<svg xmlns="http://www.
 const CopyIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2, 2" /></svg>);
 const CheckIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>);
 const ChevronDownIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>);
-const LogoutIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" /></svg>);
 
 function Card({ card, telegramUsers, onOpen }: { card: CardType, telegramUsers: TelegramUser[], onOpen: (card: CardType) => void }) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id: card.id, data: { type: "Card", card } });
@@ -335,7 +335,12 @@ function ArchivePanel({ cards, onClose, onRestore, onClearAll }: { cards: CardTy
 // --- ГЛАВНАЯ ДОСКА ---
 export default function Home() {
   const [tgUser, setTgUser] = useState<{name: string, chat_id: string} | null>(null);
-  const [loading, setLoading] = useState(true); // НОВОЕ: Состояние загрузки для исключения миганий
+  const [loading, setLoading] = useState(true);
+  
+  // НОВОЕ: Состояния для досок
+  const [boards, setBoards] = useState<BoardType[]>([]);
+  const [currentBoardId, setCurrentBoardId] = useState<string | null>(null);
+
   const [columns, setColumns] = useState<ColumnType[]>([]);
   const [cards, setCards] = useState<CardType[]>([]);
   const [telegramUsers, setTelegramUsers] = useState<TelegramUser[]>([]);
@@ -351,7 +356,6 @@ export default function Home() {
     const tg = (window as any).Telegram?.WebApp;
     
     if (tg) {
-      // Мы внутри Telegram Mini App
       tg.ready();
       tg.expand();
       
@@ -372,7 +376,6 @@ export default function Home() {
           if (data) {
             setTgUser({ name: data.name, chat_id: data.chat_id });
           } else {
-            // НОВОЕ: Формируем имя из first_name + last_name, иначе берем username
             const newName = [tgUserData.first_name, tgUserData.last_name].filter(Boolean).join(' ') || tgUserData.username || "Telegram User";
             supabase.from('telegram_users').insert([{ chat_id: chatId, name: newName, username: tgUserData.username }]).select().single().then(({ data: newUser }) => {
               if (newUser) {
@@ -387,7 +390,6 @@ export default function Home() {
         setLoading(false);
       }
     } else {
-      // Обычный браузер. Проверяем, нет ли токена в ссылке (Magic Link)
       const params = new URLSearchParams(window.location.search);
       const token = params.get('tg_token');
       if (token) {
@@ -404,20 +406,61 @@ export default function Home() {
     }
   }, []);
 
+  // НОВОЕ: Загрузка списка досок
   useEffect(() => {
     if (!tgUser) return;
-    async function fetchData() {
-      const { data: cols } = await supabase.from('columns').select('*').order('position');
-      const { data: cardsData } = await supabase.from('cards').select('*').order('position');
+
+    async function fetchBoards() {
+      const { data: boardsData } = await supabase.from('boards').select('*').order('created_at', { ascending: true });
+      if (boardsData && boardsData.length > 0) {
+        setBoards(boardsData);
+        setCurrentBoardId(prev => prev || boardsData[0].id);
+      } else {
+        setBoards([]);
+        setCurrentBoardId(null);
+      }
+    }
+
+    fetchBoards();
+
+    const channel = supabase.channel('public:boards')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'boards' }, fetchBoards)
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [tgUser]);
+
+  // НОВОЕ: Загрузка колонок и карточек при смене доски
+  useEffect(() => {
+    if (!tgUser || !currentBoardId) {
+      setColumns([]);
+      setCards([]);
+      return;
+    }
+
+    async function fetchBoardData() {
+      const { data: cols } = await supabase.from('columns').select('*').eq('board_id', currentBoardId).order('position');
       const { data: tgUsers } = await supabase.from('telegram_users').select('*');
+      
+      const colIds = (cols || []).map(c => c.id);
+      // ВАЖНО: Если колонок нет, передаем фейковый ID, чтобы .in() не вернул ошибку
+      const { data: cardsData } = await supabase.from('cards').select('*').in('column_id', colIds.length > 0 ? colIds : ['00000000-0000-0000-0000-000000000000']).order('position');
+      
       setColumns(cols || []);
       setCards(cardsData || []);
       setTelegramUsers(tgUsers || []);
     }
-    fetchData();
-    const channel = supabase.channel('public:cards:columns').on('postgres_changes', { event: '*', schema: 'public', table: 'cards' }, () => fetchData()).on('postgres_changes', { event: '*', schema: 'public', table: 'columns' }, () => fetchData()).on('postgres_changes', { event: '*', schema: 'public', table: 'telegram_users' }, () => fetchData()).subscribe();
+
+    fetchBoardData();
+
+    const channel = supabase.channel(`public:board_data:${currentBoardId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'columns' }, fetchBoardData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cards' }, fetchBoardData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'telegram_users' }, fetchBoardData)
+      .subscribe();
+
     return () => { supabase.removeChannel(channel); };
-  }, [tgUser]);
+  }, [tgUser, currentBoardId]);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -426,12 +469,7 @@ export default function Home() {
   const toggleTheme = () => { if (isDark) { document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light'); setIsDark(false); } else { document.documentElement.classList.add('dark'); localStorage.setItem('theme', 'dark'); setIsDark(true); } };
   useEffect(() => { if (undoTimer > 0) { const timer = setTimeout(() => setUndoTimer(prev => prev - 1), 1000); return () => clearTimeout(timer); } else if (pendingDelete) { supabase.from('columns').delete().eq('id', pendingDelete.id).then(); setPendingDelete(null); } }, [undoTimer, pendingDelete]);
   const sensors = useSensors(useSensor(MouseSensor, { activationConstraint: { distance: 10 } }), useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }));
-  
-  const handleLogout = async () => {
-    setTgUser(null);
-  };
 
-  // НОВОЕ: Экран загрузки
   if (loading) {
     return (
       <main className="bg-slate-100 dark:bg-slate-950 h-screen flex flex-col items-center justify-center">
@@ -440,7 +478,6 @@ export default function Home() {
     );
   }
 
-  // НОВОЕ: Если пользователь не авторизован (открыл в браузере без токена)
   if (!tgUser) {
     return (
       <main className="bg-slate-100 dark:bg-slate-950 h-screen flex flex-col items-center justify-center overflow-hidden relative">
@@ -462,6 +499,19 @@ export default function Home() {
         </div>
       </main>
     );
+  }
+
+  // НОВОЕ: Функция создания новой доски
+  async function handleAddBoard() {
+    const name = prompt("Введите название новой доски:");
+    if (name) {
+      const { data, error } = await supabase.from('boards').insert([{ name }]).select().single();
+      if (error) console.error("Ошибка создания доски:", error);
+      if (data) {
+        setBoards(prev => [...prev, data]);
+        setCurrentBoardId(data.id); // Переключаемся на новую доску автоматически
+      }
+    }
   }
 
   function onDragStart(e: DragStartEvent) { if (e.active.data.current?.type === "Card") setActiveCard(e.active.data.current.card); }
@@ -553,7 +603,14 @@ export default function Home() {
   }
 
   async function handleAddColumn() {
-    const title = prompt("Введите название колонки:"); if (title) { const newPosition = columns.length + 1; const { data, error } = await supabase.from('columns').insert([{ title, position: newPosition }]).select(); if (error) console.error("Ошибка создания:", error); if (data) setColumns((prev) => [...prev, data[0]]); }
+    if (!currentBoardId) return;
+    const title = prompt("Введите название колонки:"); 
+    if (title) { 
+      const newPosition = columns.length + 1; 
+      const { data, error } = await supabase.from('columns').insert([{ title, position: newPosition, board_id: currentBoardId }]).select(); 
+      if (error) console.error("Ошибка создания:", error); 
+      if (data) setColumns((prev) => [...prev, data[0]]); 
+    }
   }
 
   function handleDeleteColumn(col: ColumnType) { setColumns((prev) => prev.filter((c) => c.id !== col.id)); setPendingDelete(col); setUndoTimer(15); }
@@ -625,15 +682,25 @@ export default function Home() {
     <main className="bg-slate-100 h-screen flex flex-col overflow-hidden relative bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-zinc-800 dark:via-zinc-900 dark:to-neutral-900 transition-colors">
       <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-slate-300/40 dark:bg-zinc-700/30 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-slate-400/30 dark:bg-neutral-700/30 rounded-full blur-[120px] pointer-events-none"></div>
+      
+      {/* НОВОЕ: Шапка с выбором доски */}
       <header className="relative z-10 flex items-center justify-between p-4 bg-white/40 dark:bg-white/5 backdrop-blur-2xl border-b border-white/60 dark:border-white/10 shadow-sm">
-        <div className="flex items-center gap-2">
-          <h1 className="text-slate-800 dark:text-white font-semibold text-lg tracking-tight">NOVIKOV PRODUCTION</h1>
-          {tgUser && <span className="text-slate-400 text-xs hidden sm:inline">(Вы вошли как {tgUser.name})</span>}
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <h1 className="text-slate-800 dark:text-white font-semibold text-lg tracking-tight whitespace-nowrap">NP</h1>
+          <select 
+            value={currentBoardId || ""} 
+            onChange={(e) => setCurrentBoardId(e.target.value)} 
+            className="bg-transparent text-slate-800 dark:text-white font-semibold text-lg tracking-tight outline-none cursor-pointer max-w-[150px] sm:max-w-xs truncate"
+          >
+            {boards.map(b => <option key={b.id} value={b.id} className="bg-white dark:bg-zinc-800">{b.name}</option>)}
+          </select>
+          <button onClick={handleAddBoard} className="text-slate-500 dark:text-slate-400 hover:bg-black/5 dark:hover:bg-white/10 p-1.5 rounded-lg transition-colors" title="Создать доску">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          </button>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={toggleTheme} className="text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 p-2 rounded-xl transition-colors" title="Сменить тему">{isDark ? <SunIcon /> : <MoonIcon />}</button>
           <button onClick={() => setIsArchiveOpen(true)} className="text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 px-3 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm font-medium"><ArchiveIcon size={18} /><span className="hidden sm:inline">Архив</span><span className="bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded-full text-xs">{archivedCards.length}</span></button>
-          <button onClick={handleLogout} className="text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 p-2 rounded-xl transition-colors" title="Выйти"><LogoutIcon /></button>
         </div>
       </header>
 
