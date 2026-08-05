@@ -337,7 +337,6 @@ export default function Home() {
   const [tgUser, setTgUser] = useState<{name: string, chat_id: string} | null>(null);
   const [loading, setLoading] = useState(true);
   
-  // НОВОЕ: Состояния для досок
   const [boards, setBoards] = useState<BoardType[]>([]);
   const [currentBoardId, setCurrentBoardId] = useState<string | null>(null);
 
@@ -406,7 +405,6 @@ export default function Home() {
     }
   }, []);
 
-  // НОВОЕ: Загрузка списка досок
   useEffect(() => {
     if (!tgUser) return;
 
@@ -430,7 +428,6 @@ export default function Home() {
     return () => { supabase.removeChannel(channel); };
   }, [tgUser]);
 
-  // НОВОЕ: Загрузка колонок и карточек при смене доски
   useEffect(() => {
     if (!tgUser || !currentBoardId) {
       setColumns([]);
@@ -443,7 +440,6 @@ export default function Home() {
       const { data: tgUsers } = await supabase.from('telegram_users').select('*');
       
       const colIds = (cols || []).map(c => c.id);
-      // ВАЖНО: Если колонок нет, передаем фейковый ID, чтобы .in() не вернул ошибку
       const { data: cardsData } = await supabase.from('cards').select('*').in('column_id', colIds.length > 0 ? colIds : ['00000000-0000-0000-0000-000000000000']).order('position');
       
       setColumns(cols || []);
@@ -501,7 +497,6 @@ export default function Home() {
     );
   }
 
-  // НОВОЕ: Функция создания новой доски
   async function handleAddBoard() {
     const name = prompt("Введите название новой доски:");
     if (name) {
@@ -509,7 +504,7 @@ export default function Home() {
       if (error) console.error("Ошибка создания доски:", error);
       if (data) {
         setBoards(prev => [...prev, data]);
-        setCurrentBoardId(data.id); // Переключаемся на новую доску автоматически
+        setCurrentBoardId(data.id);
       }
     }
   }
@@ -683,10 +678,9 @@ export default function Home() {
       <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-slate-300/40 dark:bg-zinc-700/30 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-slate-400/30 dark:bg-neutral-700/30 rounded-full blur-[120px] pointer-events-none"></div>
       
-      {/* НОВОЕ: Шапка с выбором доски */}
+      {/* ИЗМЕНЕНО: Убран текст "NP" */}
       <header className="relative z-10 flex items-center justify-between p-4 bg-white/40 dark:bg-white/5 backdrop-blur-2xl border-b border-white/60 dark:border-white/10 shadow-sm">
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <h1 className="text-slate-800 dark:text-white font-semibold text-lg tracking-tight whitespace-nowrap">NP</h1>
           <select 
             value={currentBoardId || ""} 
             onChange={(e) => setCurrentBoardId(e.target.value)} 
