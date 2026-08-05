@@ -7,7 +7,6 @@ import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-
 import { CSS } from "@dnd-kit/utilities";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
-import type { User } from "@supabase/supabase-js";
 
 type CardType = { 
   id: string; title: string; column_id: string; due_date?: string | null; due_time?: string | null; 
@@ -39,53 +38,6 @@ const CopyIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w
 const CheckIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>);
 const ChevronDownIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>);
 const LogoutIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" /></svg>);
-
-function AuthForm() {
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    if (isLogin) {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) setError(error.message);
-    } else {
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) setError(error.message);
-      else setIsLogin(true);
-    }
-    setLoading(false);
-  };
-
-  return (
-    <div className="w-full max-w-md">
-      <motion.div className="bg-white/60 dark:bg-zinc-900/80 backdrop-blur-2xl rounded-3xl p-8 border border-white/80 dark:border-white/10 shadow-2xl" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-2xl font-bold text-slate-800 dark:text-white mb-6 text-center">NOVIKOV PRODUCTION</h1>
-        <div className="flex bg-slate-200/50 dark:bg-slate-800/50 p-1 rounded-xl mb-6">
-          <button onClick={() => setIsLogin(true)} className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${isLogin ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm" : "text-slate-500 dark:text-slate-400"}`}>Вход</button>
-          <button onClick={() => setIsLogin(false)} className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${!isLogin ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm" : "text-slate-500 dark:text-slate-400"}`}>Регистрация</button>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Email</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-xl outline-none focus:ring-1 focus:ring-slate-400 text-sm text-slate-800 dark:text-white" placeholder="example@mail.com" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Пароль</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-xl outline-none focus:ring-1 focus:ring-slate-400 text-sm text-slate-800 dark:text-white" placeholder="Минимум 6 символов" />
-          </div>
-          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-          <button type="submit" disabled={loading} className="w-full bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 py-3 rounded-xl font-medium hover:bg-slate-700 dark:hover:bg-white transition-colors shadow-md disabled:opacity-50">{loading ? "Загрузка..." : (isLogin ? "Войти" : "Зарегистрироваться")}</button>
-        </form>
-      </motion.div>
-    </div>
-  );
-}
 
 function Card({ card, telegramUsers, onOpen }: { card: CardType, telegramUsers: TelegramUser[], onOpen: (card: CardType) => void }) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id: card.id, data: { type: "Card", card } });
@@ -191,7 +143,6 @@ function DateSection({ title, dateStr, timeStr, onChange, useTimeRange = false }
   const currentYear = new Date().getFullYear();
   const yearsArray = Array.from({ length: 6 }, (_, i) => currentYear + i);
 
-  // ИЗМЕНЕНО: Шаг времени изменен с 10 минут на 30 минут (m += 30)
   const timesArray = [];
   for (let h = 0; h <= 23; h++) { for (let m = 0; m < 60; m += 30) { timesArray.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`); } }
   timesArray.push("23:59");
@@ -383,8 +334,8 @@ function ArchivePanel({ cards, onClose, onRestore, onClearAll }: { cards: CardTy
 
 // --- ГЛАВНАЯ ДОСКА ---
 export default function Home() {
-  const [user, setUser] = useState<User | null>(null);
   const [tgUser, setTgUser] = useState<{name: string, chat_id: string} | null>(null);
+  const [loading, setLoading] = useState(true); // НОВОЕ: Состояние загрузки для исключения миганий
   const [columns, setColumns] = useState<ColumnType[]>([]);
   const [cards, setCards] = useState<CardType[]>([]);
   const [telegramUsers, setTelegramUsers] = useState<TelegramUser[]>([]);
@@ -400,6 +351,7 @@ export default function Home() {
     const tg = (window as any).Telegram?.WebApp;
     
     if (tg) {
+      // Мы внутри Telegram Mini App
       tg.ready();
       tg.expand();
       
@@ -420,7 +372,8 @@ export default function Home() {
           if (data) {
             setTgUser({ name: data.name, chat_id: data.chat_id });
           } else {
-            const newName = tgUserData.first_name || "Telegram User";
+            // НОВОЕ: Формируем имя из first_name + last_name, иначе берем username
+            const newName = [tgUserData.first_name, tgUserData.last_name].filter(Boolean).join(' ') || tgUserData.username || "Telegram User";
             supabase.from('telegram_users').insert([{ chat_id: chatId, name: newName, username: tgUserData.username }]).select().single().then(({ data: newUser }) => {
               if (newUser) {
                 setTgUser({ name: newUser.name, chat_id: newUser.chat_id });
@@ -428,12 +381,13 @@ export default function Home() {
               }
             });
           }
+          setLoading(false);
         });
+      } else {
+        setLoading(false);
       }
     } else {
-      supabase.auth.getSession().then(({ data: { session } }) => { setUser(session?.user ?? null); });
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => { setUser(session?.user ?? null); });
-      
+      // Обычный браузер. Проверяем, нет ли токена в ссылке (Magic Link)
       const params = new URLSearchParams(window.location.search);
       const token = params.get('tg_token');
       if (token) {
@@ -442,14 +396,16 @@ export default function Home() {
             setTgUser({ name: data.name, chat_id: data.chat_id });
             window.history.replaceState({}, document.title, window.location.pathname);
           }
+          setLoading(false);
         });
+      } else {
+        setLoading(false);
       }
-      return () => subscription.unsubscribe();
     }
   }, []);
 
   useEffect(() => {
-    if (!user && !tgUser) return;
+    if (!tgUser) return;
     async function fetchData() {
       const { data: cols } = await supabase.from('columns').select('*').order('position');
       const { data: cardsData } = await supabase.from('cards').select('*').order('position');
@@ -461,7 +417,7 @@ export default function Home() {
     fetchData();
     const channel = supabase.channel('public:cards:columns').on('postgres_changes', { event: '*', schema: 'public', table: 'cards' }, () => fetchData()).on('postgres_changes', { event: '*', schema: 'public', table: 'columns' }, () => fetchData()).on('postgres_changes', { event: '*', schema: 'public', table: 'telegram_users' }, () => fetchData()).subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [user, tgUser]);
+  }, [tgUser]);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -472,12 +428,40 @@ export default function Home() {
   const sensors = useSensors(useSensor(MouseSensor, { activationConstraint: { distance: 10 } }), useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }));
   
   const handleLogout = async () => {
-    if (user) await supabase.auth.signOut();
-    if (tgUser) setTgUser(null);
+    setTgUser(null);
   };
 
-  if (!user && !tgUser) {
-    return (<main className="bg-slate-100 h-screen flex flex-col items-center justify-center overflow-hidden relative bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-zinc-800 dark:via-zinc-900 dark:to-neutral-900 transition-colors"><div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-slate-300/40 dark:bg-zinc-700/30 rounded-full blur-[120px] pointer-events-none"></div><div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-slate-400/30 dark:bg-neutral-700/30 rounded-full blur-[120px] pointer-events-none"></div><AuthForm /></main>);
+  // НОВОЕ: Экран загрузки
+  if (loading) {
+    return (
+      <main className="bg-slate-100 dark:bg-slate-950 h-screen flex flex-col items-center justify-center">
+        <div className="w-12 h-12 border-4 border-slate-300 border-t-slate-800 dark:border-slate-700 dark:border-t-slate-100 rounded-full animate-spin"></div>
+      </main>
+    );
+  }
+
+  // НОВОЕ: Если пользователь не авторизован (открыл в браузере без токена)
+  if (!tgUser) {
+    return (
+      <main className="bg-slate-100 dark:bg-slate-950 h-screen flex flex-col items-center justify-center overflow-hidden relative">
+        <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-slate-300/40 dark:bg-zinc-700/30 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-slate-400/30 dark:bg-neutral-700/30 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="w-full max-w-md px-4">
+          <motion.div 
+            className="bg-white/60 dark:bg-zinc-900/80 backdrop-blur-2xl rounded-3xl p-8 border border-white/80 dark:border-white/10 shadow-2xl text-center flex flex-col items-center"
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="currentColor" className="text-blue-500 mb-6"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.324-.437.891-.662 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+            <h1 className="text-xl font-bold text-slate-800 dark:text-white mb-2">NOVIKOV PRODUCTION</h1>
+            <p className="text-slate-500 dark:text-slate-400 mb-6 text-sm">Пожалуйста, откройте это приложение через нашего бота в Telegram, чтобы войти.</p>
+            <a href="https://t.me/" target="_blank" rel="noopener noreferrer" className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-medium transition-colors shadow-md w-full">
+              Открыть в Telegram
+            </a>
+          </motion.div>
+        </div>
+      </main>
+    );
   }
 
   function onDragStart(e: DragStartEvent) { if (e.active.data.current?.type === "Card") setActiveCard(e.active.data.current.card); }
