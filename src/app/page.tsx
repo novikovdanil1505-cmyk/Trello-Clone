@@ -191,8 +191,9 @@ function DateSection({ title, dateStr, timeStr, onChange, useTimeRange = false }
   const currentYear = new Date().getFullYear();
   const yearsArray = Array.from({ length: 6 }, (_, i) => currentYear + i);
 
+  // ИЗМЕНЕНО: Шаг времени изменен с 10 минут на 30 минут (m += 30)
   const timesArray = [];
-  for (let h = 0; h <= 23; h++) { for (let m = 0; m < 60; m += 10) { timesArray.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`); } }
+  for (let h = 0; h <= 23; h++) { for (let m = 0; m < 60; m += 30) { timesArray.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`); } }
   timesArray.push("23:59");
 
   const formatDateString = (d: number, m: number, y: number) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
@@ -415,7 +416,6 @@ export default function Home() {
       const tgUserData = tg.initDataUnsafe?.user;
       if (tgUserData && tgUserData.id) {
         const chatId = tgUserData.id.toString();
-        // ИСПРАВЛЕНО: используем maybeSingle()
         supabase.from('telegram_users').select('*').eq('chat_id', chatId).maybeSingle().then(({ data }) => {
           if (data) {
             setTgUser({ name: data.name, chat_id: data.chat_id });
@@ -424,7 +424,6 @@ export default function Home() {
             supabase.from('telegram_users').insert([{ chat_id: chatId, name: newName, username: tgUserData.username }]).select().single().then(({ data: newUser }) => {
               if (newUser) {
                 setTgUser({ name: newUser.name, chat_id: newUser.chat_id });
-                // НОВОЕ: Сразу добавляем пользователя в локальный список
                 setTelegramUsers(prev => [...prev, newUser]);
               }
             });
