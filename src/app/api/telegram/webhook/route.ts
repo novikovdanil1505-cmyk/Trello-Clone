@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: Request) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY; // ИСПРАВЛЕНО: process.env
 
   if (!botToken || !supabaseUrl || !supabaseKey) {
     return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
