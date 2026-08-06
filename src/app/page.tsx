@@ -12,7 +12,7 @@ type CardType = {
   id: string; title: string; column_id: string; due_date?: string | null; due_time?: string | null; 
   deadline_date?: string | null; deadline_time?: string | null;
   comment?: string | null; is_archived?: boolean; client_name?: string | null; phone_number?: string | null; telegram_ids?: string | null;
-  position?: number; payment_status?: string | null;
+  position?: number; payment_status?: string | null; amount?: number | null;
 };
 type ColumnType = { id: string; title: string; position: number; board_id: string };
 type TelegramUser = { id: string; chat_id: string; name: string };
@@ -49,6 +49,9 @@ function Card({ card, telegramUsers, onOpen }: { card: CardType, telegramUsers: 
   return (
     <motion.div ref={setNodeRef} {...attributes} {...listeners} style={style} layout initial={{ opacity: 0, scale: 0.8, y: 10 }} animate={{ opacity: isDragging ? 0.4 : 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} onClick={() => onOpen(card)} className={`${cardBg} backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer active:cursor-grabbing border border-white/80 dark:border-white/10 shadow-sm hover:bg-white/80 dark:hover:bg-zinc-800/80 transition-colors select-none touch-none`}>
       <p className="text-sm text-slate-800 dark:text-slate-100 font-medium mb-1">{card.title}</p>
+      {card.amount != null && card.amount > 0 && (
+        <p className="text-sm text-slate-600 dark:text-slate-300 font-semibold mb-1">{card.amount.toLocaleString('ru-RU')} ₽</p>
+      )}
       <div className="flex flex-wrap gap-2 mt-2 text-xs text-slate-500 dark:text-slate-400">
         {assignedUsers.map(u => {
           const color = getUserColor(u.chat_id);
@@ -247,6 +250,7 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
   const [selectedUsers, setSelectedUsers] = useState<string[]>(card.telegram_ids ? card.telegram_ids.split(',').filter(Boolean) : []);
   const [copied, setCopied] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(card.payment_status || null);
+  const [amount, setAmount] = useState<string>(card.amount != null ? String(card.amount) : "");
 
   const [dueDate, setDueDate] = useState<string | null>(card.due_date);
   const [dueTime, setDueTime] = useState<string>(card.due_time || "");
@@ -255,11 +259,12 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
 
   const handleSave = () => {
     const cleanTelegramIds = selectedUsers.length > 0 ? selectedUsers.join(',') : null;
+    const cleanAmount = amount !== "" ? Number(amount) : null;
     onUpdate(card.id, { 
       title, comment, due_date: dueDate, due_time: dueTime, 
       deadline_date: deadlineDate, deadline_time: deadlineTime,
       client_name: clientName, phone_number: phoneNumber, telegram_ids: cleanTelegramIds,
-      payment_status: paymentStatus
+      payment_status: paymentStatus, amount: cleanAmount
     });
     onClose();
   };
@@ -290,6 +295,21 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
         <div className="mb-6">
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Статус оплаты</h3>
           <PaymentSelect value={paymentStatus} onChange={setPaymentStatus} />
+        </div>
+
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Сумма</h3>
+          <input
+            type="text"
+            inputMode="numeric"
+            value={amount}
+            onChange={(e) => {
+              const val = e.target.value.replace(/[^0-9]/g, '');
+              setAmount(val);
+            }}
+            placeholder="0"
+            className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-slate-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+          />
         </div>
 
         <div className="mb-6">
@@ -678,7 +698,6 @@ export default function Home() {
       <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-slate-300/40 dark:bg-zinc-700/30 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-slate-400/30 dark:bg-neutral-700/30 rounded-full blur-[120px] pointer-events-none"></div>
       
-      {/* ИЗМЕНЕНО: Убран текст "NP" */}
       <header className="relative z-10 flex items-center justify-between p-4 bg-white/40 dark:bg-white/5 backdrop-blur-2xl border-b border-white/60 dark:border-white/10 shadow-sm">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <select 
