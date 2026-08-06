@@ -12,7 +12,7 @@ type CardType = {
   id: string; title: string; column_id: string; due_date?: string | null; due_time?: string | null; 
   deadline_date?: string | null; deadline_time?: string | null;
   comment?: string | null; is_archived?: boolean; client_name?: string | null; phone_number?: string | null; telegram_ids?: string | null;
-  position?: number; payment_status?: string | null;
+  position?: number; payment_status?: string | null; amount?: number | null;
 };
 type ColumnType = { id: string; title: string; position: number; board_id: string };
 type TelegramUser = { id: string; chat_id: string; name: string };
@@ -35,70 +35,38 @@ const SunIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height
 const MoonIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg>);
 const ArchiveIcon = ({ size = 24 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="5" x="2" y="3" rx="1" /><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" /><path d="M10 12h4" /></svg>);
 const TrashIcon = ({ size = 16 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>);
-const CopyIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2, 2" /></svg>);
-const CheckIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>);
+const CopyIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>);
+const CheckIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>);
 const ChevronDownIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>);
 
-function Card({ card, telegramUsers, onOpen }: { card: CardType, telegramUsers: TelegramUser[], onOpen: (card: CardType) => void }) {
-  const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id: card.id, data: { type: "Card", card } });
-  const style = { transform: CSS.Transform.toString(transform), transition };
-  const tgIds = card.telegram_ids ? card.telegram_ids.split(',').filter(Boolean) : [];
-  const assignedUsers = telegramUsers.filter(u => tgIds.includes(u.chat_id));
-  const cardBg = card.payment_status ? PAYMENT_STYLES[card.payment_status].bg : "bg-white/50 dark:bg-zinc-800/50";
-
-  return (
-    <motion.div ref={setNodeRef} {...attributes} {...listeners} style={style} layout initial={{ opacity: 0, scale: 0.8, y: 10 }} animate={{ opacity: isDragging ? 0.4 : 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} onClick={() => onOpen(card)} className={`${cardBg} backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer active:cursor-grabbing border border-white/80 dark:border-white/10 shadow-sm hover:bg-white/80 dark:hover:bg-zinc-800/80 transition-colors select-none touch-none`}>
-      <p className="text-sm text-slate-800 dark:text-slate-100 font-medium mb-1">{card.title}</p>
-      <div className="flex flex-wrap gap-2 mt-2 text-xs text-slate-500 dark:text-slate-400">
-        {assignedUsers.map(u => {
-          const color = getUserColor(u.chat_id);
-          return (<span key={u.chat_id} style={{ backgroundColor: color }} className="px-2 py-1 rounded-md text-white text-[11px] font-medium whitespace-nowrap">{u.name}</span>);
-        })}
-        {card.due_date && (<span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">📅 {new Date(card.due_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} {card.due_time || ''}</span>)}
-        {card.deadline_date && (
-          <span className="border border-green-500 text-green-600 dark:text-green-400 dark:border-green-400 px-2 py-1 rounded-md flex items-center gap-1">
-            ⏳ {new Date(card.deadline_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} {card.deadline_time || ''}
-          </span>
-        )}
-        {card.comment && <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">💬</span>}
-      </div>
-    </motion.div>
-  );
-}
-
-function PaymentSelect({ value, onChange }: { value: string | null, onChange: (val: string | null) => void }) {
+function PaymentSelect({ value, onChange }: { value: string | null, onChange: (v: string | null) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const options = [
-    { value: "unpaid", label: "Не оплачено", color: "#ef4444" },
-    { value: "prepaid", label: "Предоплата", color: "#eab308" },
-    { value: "paid", label: "Оплачено", color: "#22c55e" },
+    { key: 'unpaid', ...PAYMENT_STYLES.unpaid },
+    { key: 'prepaid', ...PAYMENT_STYLES.prepaid },
+    { key: 'paid', ...PAYMENT_STYLES.paid },
   ];
-  const selected = options.find(o => o.value === value);
+  const selected = value ? options.find(o => o.key === value) : null;
 
   return (
     <div className="relative">
       <button type="button" onClick={() => setIsOpen(!isOpen)} className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl text-sm text-slate-700 dark:text-slate-200 flex items-center justify-between hover:bg-white/60 dark:hover:bg-zinc-800/70 transition-colors">
         <span className="flex items-center gap-2">
-          {selected ? <span style={{ backgroundColor: selected.color }} className="w-3 h-3 rounded-full"></span> : <span className="w-3 h-3 rounded-full border-2 border-slate-300"></span>}
-          {selected ? selected.label : "Выбрать..."}
+          {selected ? (<><span className={`w-2.5 h-2.5 rounded-full ${selected.dot}`}></span>{selected.text}</>) : "Выбрать статус..."}
         </span>
         <ChevronDownIcon size={18} />
       </button>
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)}></div>
-          <div className="absolute z-50 mt-2 w-full bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div className="absolute z-50 mt-2 w-full bg-white dark:bg-zinc-800 rounded-xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-700">
             {options.map(opt => (
-              <button key={opt.value} type="button" onClick={() => { onChange(opt.value); setIsOpen(false); }} className="flex items-center gap-2 p-2.5 w-full hover:bg-slate-100 dark:hover:bg-zinc-700/50 transition-colors text-left">
-                <span style={{ backgroundColor: opt.color }} className="w-3 h-3 rounded-full"></span>
-                <span className="text-sm text-slate-700 dark:text-slate-200">{opt.label}</span>
+              <button key={opt.key} type="button" onClick={() => { onChange(opt.key === value ? null : opt.key); setIsOpen(false); }} className={`w-full px-4 py-3 text-left text-sm flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-zinc-700/50 transition-colors ${value === opt.key ? 'bg-slate-50 dark:bg-zinc-700/30' : ''}`}>
+                <span className={`w-2.5 h-2.5 rounded-full ${opt.dot}`}></span>
+                <span className="text-slate-700 dark:text-slate-200">{opt.text}</span>
+                {value === opt.key && <CheckIcon size={14} className="text-slate-400 ml-auto" />}
               </button>
             ))}
-            {value && (
-              <button type="button" onClick={() => { onChange(null); setIsOpen(false); }} className="text-red-500 text-xs p-2 w-full text-center border-t border-slate-200 dark:border-slate-700 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                Убрать статус
-              </button>
-            )}
           </div>
         </>
       )}
@@ -106,27 +74,14 @@ function PaymentSelect({ value, onChange }: { value: string | null, onChange: (v
   );
 }
 
-function DroppableContainer({ id, children }: { id: string, children: React.ReactNode }) {
-  const { setNodeRef } = useDroppable({ id, data: { type: "Column" } });
-  return <div ref={setNodeRef} className="flex-1 min-h-[50px] overflow-y-auto pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">{children}</div>;
+function parseDate(dateStr: string | null | undefined): Date {
+  if (!dateStr) return new Date();
+  const parts = dateStr.split('-');
+  return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
 }
 
-function ArchiveDropZone({ isDragging }: { isDragging: boolean }) {
-  const { setNodeRef, isOver } = useDroppable({ id: 'archive-zone' });
-  return (<div ref={setNodeRef} className={`fixed bottom-6 right-6 z-[70] w-20 h-20 rounded-full flex items-center justify-center shadow-2xl border-2 transition-all duration-300 ${isDragging ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-50 pointer-events-none'} ${isOver ? 'bg-red-500 border-red-300 scale-110 text-white' : 'bg-slate-800/80 dark:bg-zinc-100/80 backdrop-blur-xl border-white/20 dark:border-black/20 text-white dark:text-zinc-900'}`}><ArchiveIcon size={32} /></div>);
-}
-
-function AddCard({ columnId, onAdd }: { columnId: string, onAdd: (colId: string, title: string) => void }) {
-  const [isAdding, setIsAdding] = useState(false);
-  const [title, setTitle] = useState("");
-  const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); if (title.trim()) { onAdd(columnId, title.trim()); setTitle(""); setIsAdding(false); } };
-  if (!isAdding) return (<button onClick={() => setIsAdding(true)} className="text-slate-500 dark:text-slate-400 text-sm text-left mt-2 px-3 py-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl transition-colors w-full flex items-center gap-1.5 font-medium"><span className="text-base leading-none">+</span> Добавить карточку</button>);
-  return (<motion.form onSubmit={handleSubmit} className="mt-2 p-2 bg-white/60 dark:bg-zinc-800/60 backdrop-blur-xl rounded-xl border border-white/80 dark:border-white/10 shadow-sm" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}><textarea value={title} onChange={(e) => setTitle(e.target.value)} className="w-full p-2 bg-transparent rounded-lg outline-none focus:ring-1 focus:ring-slate-400 text-sm resize-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500" placeholder="Введите название..." autoFocus /><div className="flex gap-2 mt-2"><button type="submit" className="bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-slate-700 dark:hover:bg-white transition-colors shadow-sm">Добавить</button><button type="button" onClick={() => setIsAdding(false)} className="text-slate-500 dark:text-slate-400 px-3 py-1.5 rounded-lg text-sm hover:bg-black/5 dark:hover:bg-white/5 transition-colors">✕</button></div></motion.form>);
-}
-
-function DateSection({ title, dateStr, timeStr, onChange, useTimeRange = false }: { title: string, dateStr: string | null, timeStr: string | null, onChange: (date: string | null, time: string) => void, useTimeRange?: boolean }) {
+function DateSection({ title, dateStr, timeStr, useTimeRange, onChange }: { title: string, dateStr: string | null | undefined, timeStr: string | null | undefined, useTimeRange: boolean, onChange: (date: string | null, time: string) => void }) {
   const [hasDate, setHasDate] = useState(!!dateStr);
-  const parseDate = (d: string | null) => { if (!d) return new Date(); const [y, m, dy] = d.split('-').map(Number); return new Date(y, m - 1, dy); };
   const initialDate = parseDate(dateStr);
   const [day, setDay] = useState(initialDate.getDate());
   const [month, setMonth] = useState(initialDate.getMonth());
@@ -247,6 +202,7 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
   const [selectedUsers, setSelectedUsers] = useState<string[]>(card.telegram_ids ? card.telegram_ids.split(',').filter(Boolean) : []);
   const [copied, setCopied] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(card.payment_status || null);
+  const [amount, setAmount] = useState<string>(card.amount != null ? String(card.amount) : "");
 
   const [dueDate, setDueDate] = useState<string | null>(card.due_date);
   const [dueTime, setDueTime] = useState<string>(card.due_time || "");
@@ -255,11 +211,12 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
 
   const handleSave = () => {
     const cleanTelegramIds = selectedUsers.length > 0 ? selectedUsers.join(',') : null;
+    const cleanAmount = amount !== "" ? Number(amount) : null;
     onUpdate(card.id, { 
       title, comment, due_date: dueDate, due_time: dueTime, 
       deadline_date: deadlineDate, deadline_time: deadlineTime,
       client_name: clientName, phone_number: phoneNumber, telegram_ids: cleanTelegramIds,
-      payment_status: paymentStatus
+      payment_status: paymentStatus, amount: cleanAmount
     });
     onClose();
   };
@@ -290,6 +247,21 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
         <div className="mb-6">
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Статус оплаты</h3>
           <PaymentSelect value={paymentStatus} onChange={setPaymentStatus} />
+        </div>
+
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Сумма</h3>
+          <input
+            type="text"
+            inputMode="numeric"
+            value={amount}
+            onChange={(e) => {
+              const val = e.target.value.replace(/[^0-9]/g, '');
+              setAmount(val);
+            }}
+            placeholder="0"
+            className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-slate-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+          />
         </div>
 
         <div className="mb-6">
