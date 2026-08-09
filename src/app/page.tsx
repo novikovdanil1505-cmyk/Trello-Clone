@@ -16,7 +16,6 @@ type CardType = {
 };
 type ColumnType = { id: string; title: string; position: number; board_id: string };
 type TelegramUser = { id: string; chat_id: string; name: string };
-type BoardType = { id: string; name: string };
 
 const USER_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'];
 const getUserColor = (id: string) => {
@@ -32,8 +31,6 @@ const PAYMENT_STYLES: Record<string, { bg: string, dot: string, text: string }> 
 };
 
 // --- Иконки ---
-const SunIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg>);
-const MoonIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg>);
 const ArchiveIcon = ({ size = 24 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="5" x="2" y="3" rx="1" /><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" /><path d="M10 12h4" /></svg>);
 const TrashIcon = ({ size = 16 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>);
 const CopyIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2, 2" /></svg>);
@@ -334,78 +331,51 @@ function ArchivePanel({ cards, onClose, onRestore, onClearAll }: { cards: CardTy
   );
 }
 
-// --- НОВЫЙ Компонент: Календарь бронирования ---
+// --- Календарь бронирования ---
 function CalendarModal({ cards, onClose }: { cards: CardType[], onClose: () => void }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  
-  // Собираем все уникальные даты бронирования (due_date), игнорируя архивные
-  const bookedDates = new Set(
-    cards.filter(c => c.due_date && !c.is_archived).map(c => c.due_date)
-  );
+  const bookedDates = new Set(cards.filter(c => c.due_date && !c.is_archived).map(c => c.due_date));
 
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
   const monthName = currentMonth.toLocaleString('ru-RU', { month: 'long', year: 'numeric' });
-  
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDayOfWeek = new Date(year, month, 1).getDay(); // 0 - Вс, 1 - Пн...
-  const startOffset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1; // Сдвиг для понедельника
-
+  const firstDayOfWeek = new Date(year, month, 1).getDay();
+  const startOffset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
   const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const blanksArray = Array.from({ length: startOffset }, (_, i) => i);
 
-  const formatDate = (day: number) => {
-    return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-  };
-
-  const isToday = (day: number) => {
-    const today = new Date();
-    return day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
-  };
-
+  const formatDate = (day: number) => `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  const isToday = (day: number) => { const today = new Date(); return day === today.getDate() && month === today.getMonth() && year === today.getFullYear(); };
   const prevMonth = () => setCurrentMonth(new Date(year, month - 1, 1));
   const nextMonth = () => setCurrentMonth(new Date(year, month + 1, 1));
 
   return (
     <motion.div className="fixed inset-0 bg-black/20 dark:bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
       <motion.div className="bg-white/60 dark:bg-zinc-900/80 backdrop-blur-2xl w-full max-w-sm rounded-3xl p-6 border border-white/80 dark:border-white/10 shadow-2xl" initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} onClick={(e) => e.stopPropagation()}>
-        
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-slate-800 dark:text-white capitalize">{monthName}</h2>
           <div className="flex gap-1">
-            <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-            </button>
-            <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-            </button>
+            <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+            <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
             <button onClick={onClose} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-slate-400 dark:text-slate-500 text-xl leading-none ml-2">&times;</button>
           </div>
         </div>
-
-        <div className="grid grid-cols-7 gap-1 text-center text-xs text-slate-400 dark:text-slate-500 mb-2">
-          {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map(d => <div key={d} className="font-medium py-1">{d}</div>)}
-        </div>
-
+        <div className="grid grid-cols-7 gap-1 text-center text-xs text-slate-400 dark:text-slate-500 mb-2">{['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map(d => <div key={d} className="font-medium py-1">{d}</div>)}</div>
         <div className="grid grid-cols-7 gap-1 text-center">
           {blanksArray.map((_, i) => <div key={`blank-${i}`} className="p-2"></div>)}
           {daysArray.map(day => {
             const dateStr = formatDate(day);
             const isBooked = bookedDates.has(dateStr);
             const today = isToday(day);
-            
             return (
-              <div key={day} className={`p-2 rounded-lg relative flex flex-col items-center justify-center text-sm transition-colors
-                ${today ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 font-bold' : 'text-slate-700 dark:text-slate-200'}
-                ${!today && isBooked ? 'bg-blue-100/60 dark:bg-blue-900/30 font-semibold' : ''}
-              `}>
+              <div key={day} className={`p-2 rounded-lg relative flex flex-col items-center justify-center text-sm transition-colors ${today ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 font-bold' : 'text-slate-700 dark:text-slate-200'} ${!today && isBooked ? 'bg-blue-100/60 dark:bg-blue-900/30 font-semibold' : ''}`}>
                 {day}
                 {isBooked && !today && <span className="absolute bottom-1 w-1 h-1 bg-blue-500 rounded-full"></span>}
               </div>
             );
           })}
         </div>
-
         <div className="mt-6 pt-4 border-t border-slate-200/60 dark:border-white/10 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
           <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
           <span>Даты с забронированными карточками</span>
@@ -420,30 +390,24 @@ export default function Home() {
   const [tgUser, setTgUser] = useState<{name: string, chat_id: string} | null>(null);
   const [loading, setLoading] = useState(true);
   
-  const [boards, setBoards] = useState<BoardType[]>([]);
   const [currentBoardId, setCurrentBoardId] = useState<string | null>(null);
-
   const [columns, setColumns] = useState<ColumnType[]>([]);
   const [cards, setCards] = useState<CardType[]>([]);
   const [telegramUsers, setTelegramUsers] = useState<TelegramUser[]>([]);
   const [activeCard, setActiveCard] = useState<CardType | null>(null);
   const [editingCard, setEditingCard] = useState<CardType | null>(null);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
-  
-  // НОВОЕ: Состояние для календаря
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-
+  
   const [pendingDelete, setPendingDelete] = useState<ColumnType | null>(null);
   const [undoTimer, setUndoTimer] = useState(0);
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
     const tg = (window as any).Telegram?.WebApp;
-    
     if (tg) {
       tg.ready();
       tg.expand();
-      
       if (tg.colorScheme === 'dark') {
         document.documentElement.classList.add('dark');
         setIsDark(true);
@@ -491,29 +455,31 @@ export default function Home() {
     }
   }, []);
 
+  // НОВОЕ: Автоматический поиск (или создание) главной доски
   useEffect(() => {
     if (!tgUser) return;
 
-    async function fetchBoards() {
-      const { data: boardsData } = await supabase.from('boards').select('*').order('created_at', { ascending: true });
+    async function fetchInitialBoard() {
+      const { data: boardsData } = await supabase.from('boards').select('*').order('created_at', { ascending: true }).limit(1);
       if (boardsData && boardsData.length > 0) {
-        setBoards(boardsData);
-        setCurrentBoardId(prev => prev || boardsData[0].id);
+        setCurrentBoardId(boardsData[0].id);
       } else {
-        setBoards([]);
-        setCurrentBoardId(null);
+        // Если досок нет, создаем главную автоматически
+        const { data: newBoard } = await supabase.from('boards').insert([{ name: 'Основная доска' }]).select().single();
+        if (newBoard) setCurrentBoardId(newBoard.id);
       }
     }
 
-    fetchBoards();
+    fetchInitialBoard();
 
     const channel = supabase.channel('public:boards')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'boards' }, fetchBoards)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'boards' }, fetchInitialBoard)
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, [tgUser]);
 
+  // Загрузка данных доски
   useEffect(() => {
     if (!tgUser || !currentBoardId) {
       setColumns([]);
@@ -548,7 +514,20 @@ export default function Home() {
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'dark') { document.documentElement.classList.add('dark'); setIsDark(true); }
   }, []);
-  const toggleTheme = () => { if (isDark) { document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light'); setIsDark(false); } else { document.documentElement.classList.add('dark'); localStorage.setItem('theme', 'dark'); setIsDark(true); } };
+
+  // НОВОЕ: Переключение темы (теперь вызывается по клику на NOVIKOV)
+  const toggleTheme = () => {
+    if (isDark) {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+      setIsDark(false);
+    } else {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+      setIsDark(true);
+    }
+  };
+
   useEffect(() => { if (undoTimer > 0) { const timer = setTimeout(() => setUndoTimer(prev => prev - 1), 1000); return () => clearTimeout(timer); } else if (pendingDelete) { supabase.from('columns').delete().eq('id', pendingDelete.id).then(); setPendingDelete(null); } }, [undoTimer, pendingDelete]);
   const sensors = useSensors(useSensor(MouseSensor, { activationConstraint: { distance: 10 } }), useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }));
 
@@ -583,46 +562,27 @@ export default function Home() {
     );
   }
 
-  async function handleAddBoard() {
-    const name = prompt("Введите название новой доски:");
-    if (name) {
-      const { data, error } = await supabase.from('boards').insert([{ name }]).select().single();
-      if (error) console.error("Ошибка создания доски:", error);
-      if (data) {
-        setBoards(prev => [...prev, data]);
-        setCurrentBoardId(data.id);
-      }
-    }
-  }
-
   function onDragStart(e: DragStartEvent) { if (e.active.data.current?.type === "Card") setActiveCard(e.active.data.current.card); }
   
   function onDragEnd(e: DragEndEvent) {
     const { active, over } = e;
     setActiveCard(null);
     if (!over) return;
-
     const activeType = active.data.current?.type;
     const overType = over.data.current?.type;
-
     if (activeType !== "Card") return;
-
     if (over.id === 'archive-zone') { 
       const draggedCard = active.data.current?.card as CardType | undefined;
       if (draggedCard) handleToggleArchive(draggedCard.id, true); 
       return; 
     }
-
     const activeId = active.id;
     const overId = over.id;
-
     setCards(prev => {
       const activeCard = prev.find(c => c.id === activeId);
       if (!activeCard) return prev;
-
       const oldColId = activeCard.column_id;
       let newColId = oldColId;
-
       if (overType === "Card") {
         const overCard = prev.find(c => c.id === overId);
         if (!overCard) return prev;
@@ -630,7 +590,6 @@ export default function Home() {
       } else if (overType === "Column") {
         newColId = overId as string;
       }
-
       if (oldColId !== newColId) {
         const colTitle = columns.find(c => c.id === newColId)?.title;
         const chatIds = activeCard.telegram_ids ? activeCard.telegram_ids.split(',').filter(Boolean) : [];
@@ -638,27 +597,18 @@ export default function Home() {
           fetch('/api/telegram', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chatIds,
-              cardData: { title: activeCard.title },
-              type: 'status',
-              newStatus: colTitle
-            })
+            body: JSON.stringify({ chatIds, cardData: { title: activeCard.title }, type: 'status', newStatus: colTitle })
           }).catch(err => console.error("Telegram API error:", err));
         }
       }
-
       activeCard.column_id = newColId;
-      
       let updatedCards = prev.filter(c => c.id !== activeId);
-      
       if (overType === "Card") {
         const overIndex = updatedCards.findIndex(c => c.id === overId);
         updatedCards.splice(overIndex, 0, activeCard);
       } else {
         updatedCards.push(activeCard);
       }
-
       const affectedCols = new Set([oldColId, newColId]);
       affectedCols.forEach(colId => {
         let pos = 1;
@@ -672,7 +622,6 @@ export default function Home() {
           }
         });
       });
-
       return updatedCards;
     });
   }
@@ -699,7 +648,6 @@ export default function Home() {
 
   async function handleUpdateCard(id: string, updates: Partial<CardType>) {
     const originalCard = cards.find(c => c.id === id);
-    
     setCards((prev) => prev.map((c) => (c.id === id ? { ...c, ...updates } : c)));
     const { error } = await supabase.from('cards').update(updates).eq('id', id);
     if (error) console.error("Ошибка обновления:", error);
@@ -707,31 +655,19 @@ export default function Home() {
     if (updates.telegram_ids !== undefined) {
       const oldIds = originalCard?.telegram_ids ? originalCard.telegram_ids.split(',').filter(Boolean) : [];
       const newIds = updates.telegram_ids ? updates.telegram_ids.split(',').filter(Boolean) : [];
-      
       const newlyAssigned = newIds.filter(chatId => !oldIds.includes(chatId));
       const existingAssigned = newIds.filter(chatId => oldIds.includes(chatId));
-
       const cardData = {
         title: updates.title !== undefined ? updates.title : originalCard?.title,
         due_date: updates.due_date !== undefined ? updates.due_date : originalCard?.due_date,
         due_time: updates.due_time !== undefined ? updates.due_time : originalCard?.due_time,
         comment: updates.comment !== undefined ? updates.comment : originalCard?.comment
       };
-
       if (newlyAssigned.length > 0) {
-        fetch('/api/telegram', { 
-          method: 'POST', 
-          headers: { 'Content-Type': 'application/json' }, 
-          body: JSON.stringify({ chatIds: newlyAssigned, cardData, type: 'new' }) 
-        }).catch(err => console.error("Telegram API error:", err));
+        fetch('/api/telegram', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chatIds: newlyAssigned, cardData, type: 'new' }) }).catch(err => console.error("Telegram API error:", err));
       }
-
       if (existingAssigned.length > 0) {
-        fetch('/api/telegram', { 
-          method: 'POST', 
-          headers: { 'Content-Type': 'application/json' }, 
-          body: JSON.stringify({ chatIds: existingAssigned, cardData, type: 'updated' }) 
-        }).catch(err => console.error("Telegram API error:", err));
+        fetch('/api/telegram', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chatIds: existingAssigned, cardData, type: 'updated' }) }).catch(err => console.error("Telegram API error:", err));
       }
     }
   }
@@ -764,25 +700,19 @@ export default function Home() {
       <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-slate-300/40 dark:bg-zinc-700/30 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-slate-400/30 dark:bg-neutral-700/30 rounded-full blur-[120px] pointer-events-none"></div>
       
+      {/* НОВОЕ: Шапка с текстом NOVIKOV для смены темы */}
       <header className="relative z-10 flex items-center justify-between p-4 bg-white/40 dark:bg-white/5 backdrop-blur-2xl border-b border-white/60 dark:border-white/10 shadow-sm">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <select 
-            value={currentBoardId || ""} 
-            onChange={(e) => setCurrentBoardId(e.target.value)} 
-            className="bg-transparent text-slate-800 dark:text-white font-semibold text-lg tracking-tight outline-none cursor-pointer max-w-[150px] sm:max-w-xs truncate"
-          >
-            {boards.map(b => <option key={b.id} value={b.id} className="bg-white dark:bg-zinc-800">{b.name}</option>)}
-          </select>
-          <button onClick={handleAddBoard} className="text-slate-500 dark:text-slate-400 hover:bg-black/5 dark:hover:bg-white/10 p-1.5 rounded-lg transition-colors" title="Создать доску">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-          </button>
-        </div>
+        <h1 
+          onClick={toggleTheme} 
+          className="text-slate-800 dark:text-white font-semibold text-lg tracking-tight cursor-pointer select-none"
+          title="Нажмите, чтобы сменить тему"
+        >
+          NOVIKOV
+        </h1>
         <div className="flex items-center gap-2">
-          {/* НОВОЕ: Кнопка календаря */}
           <button onClick={() => setIsCalendarOpen(true)} className="text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 p-2 rounded-xl transition-colors" title="Календарь бронирования">
             <CalendarIcon />
           </button>
-          <button onClick={toggleTheme} className="text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 p-2 rounded-xl transition-colors" title="Сменить тему">{isDark ? <SunIcon /> : <MoonIcon />}</button>
           <button onClick={() => setIsArchiveOpen(true)} className="text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 px-3 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm font-medium"><ArchiveIcon size={18} /><span className="hidden sm:inline">Архив</span><span className="bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded-full text-xs">{archivedCards.length}</span></button>
         </div>
       </header>
@@ -824,11 +754,8 @@ export default function Home() {
         <ArchiveDropZone isDragging={!!activeCard} />
       </DndContext>
 
-      {/* НОВОЕ: Рендер модального окна календаря */}
       <AnimatePresence>
-        {isCalendarOpen && (
-          <CalendarModal cards={cards} onClose={() => setIsCalendarOpen(false)} />
-        )}
+        {isCalendarOpen && (<CalendarModal cards={cards} onClose={() => setIsCalendarOpen(false)} />)}
       </AnimatePresence>
 
       <AnimatePresence>{editingCard && (<CardModal card={editingCard} telegramUsers={telegramUsers} onClose={() => setEditingCard(null)} onUpdate={handleUpdateCard} onArchive={(id) => handleToggleArchive(id, true)} onDeleteTelegramUser={handleDeleteTelegramUser} />)}</AnimatePresence>
