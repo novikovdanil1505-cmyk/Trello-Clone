@@ -162,7 +162,7 @@ function DateSection({ title, dateStr, timeStr, onChange, useTimeRange = false }
     <div className="mb-6">
       <div className="flex justify-between items-center mb-2">
         <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{title}</h3>
-        {hasDate ? (<button type="button" onClick={toggleDate} className="text-xs text-slate-400 hover:text-red-500 flex items-center gap-1"><TrashIcon size={12} /> Убрать дату</button>) : (<button type="button" onClick={toggleDate} className="text-xs text-slate-400 hover:text-slate-600">+ Добавить дату</button>)}
+        {hasDate ? (<button type="button" onClick={toggleDate" className="text-xs text-slate-400 hover:text-red-500 flex items-center gap-1"><TrashIcon size={12} /> Убрать дату</button>) : (<button type="button" onClick={toggleDate} className="text-xs text-slate-400 hover:text-slate-600">+ Добавить дату</button>)}
       </div>
       {hasDate && (
         <div className="flex flex-col gap-3 bg-white/80 dark:bg-zinc-800/50 p-4 rounded-2xl border border-white/80 dark:border-white/10 shadow-sm">
@@ -361,7 +361,7 @@ function CalendarModal({ cards, onClose }: { cards: CardType[], onClose: () => v
             <button onClick={onClose} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-slate-400 dark:text-slate-500 text-xl leading-none ml-2">&times;</button>
           </div>
         </div>
-        <div className="grid grid-cols-7 gap-1 text-center text-xs text-slate-400 dark:text-slate-500 mb-2">{['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map(d => <div key={d} className="font-medium py-1">{d}</div>)}</div>
+        <div className="Grid grid-cols-7 gap-1 text-center text-xs text-slate-400 dark:text-slate-500 mb-2">{['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map(d => <div key={d} className="font-medium py-1">{d}</div>)}</div>
         <div className="grid grid-cols-7 gap-1 text-center">
           {blanksArray.map((_, i) => <div key={`blank-${i}`} className="p-2"></div>)}
           {daysArray.map(day => {
@@ -455,7 +455,6 @@ export default function Home() {
     }
   }, []);
 
-  // НОВОЕ: Автоматический поиск (или создание) главной доски
   useEffect(() => {
     if (!tgUser) return;
 
@@ -464,7 +463,6 @@ export default function Home() {
       if (boardsData && boardsData.length > 0) {
         setCurrentBoardId(boardsData[0].id);
       } else {
-        // Если досок нет, создаем главную автоматически
         const { data: newBoard } = await supabase.from('boards').insert([{ name: 'Основная доска' }]).select().single();
         if (newBoard) setCurrentBoardId(newBoard.id);
       }
@@ -479,7 +477,6 @@ export default function Home() {
     return () => { supabase.removeChannel(channel); };
   }, [tgUser]);
 
-  // Загрузка данных доски
   useEffect(() => {
     if (!tgUser || !currentBoardId) {
       setColumns([]);
@@ -515,7 +512,6 @@ export default function Home() {
     if (savedTheme === 'dark') { document.documentElement.classList.add('dark'); setIsDark(true); }
   }, []);
 
-  // НОВОЕ: Переключение темы (теперь вызывается по клику на NOVIKOV)
   const toggleTheme = () => {
     if (isDark) {
       document.documentElement.classList.remove('dark');
@@ -553,8 +549,9 @@ export default function Home() {
             <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="currentColor" className="text-blue-500 mb-6"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.324-.437.891-.662 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
             <h1 className="text-xl font-bold text-slate-800 dark:text-white mb-2">NOVIKOV PRODUCTION</h1>
             <p className="text-slate-500 dark:text-slate-400 mb-6 text-sm">Пожалуйста, откройте это приложение через нашего бота в Telegram, чтобы войти.</p>
-            <a href="https://t.me/" target="_blank" rel="noopener noreferrer" className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-medium transition-colors shadow-md w-full">
-              Открыть в Telegram
+            {/* ИЗМЕНЕНО: Ссылка ведет прямо на твоего бота. Замени ТВОЙ_БОТ_ЮЗЕРНЕЙМ на юзернейм бота (например, novikov_board_bot) */}
+            <a href="https://t.me/@nprodTrelloBot" target="_blank" rel="noopener noreferrer" className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-medium transition-colors shadow-md w-full">
+              Открыть бота
             </a>
           </motion.div>
         </div>
@@ -700,13 +697,8 @@ export default function Home() {
       <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-slate-300/40 dark:bg-zinc-700/30 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-slate-400/30 dark:bg-neutral-700/30 rounded-full blur-[120px] pointer-events-none"></div>
       
-      {/* НОВОЕ: Шапка с текстом NOVIKOV для смены темы */}
       <header className="relative z-10 flex items-center justify-between p-4 bg-white/40 dark:bg-white/5 backdrop-blur-2xl border-b border-white/60 dark:border-white/10 shadow-sm">
-        <h1 
-          onClick={toggleTheme} 
-          className="text-slate-800 dark:text-white font-semibold text-lg tracking-tight cursor-pointer select-none"
-          title="Нажмите, чтобы сменить тему"
-        >
+        <h1 onClick={toggleTheme} className="text-slate-800 dark:text-white font-semibold text-lg tracking-tight cursor-pointer select-none" title="Нажмите, чтобы сменить тему">
           NOVIKOV
         </h1>
         <div className="flex items-center gap-2">
