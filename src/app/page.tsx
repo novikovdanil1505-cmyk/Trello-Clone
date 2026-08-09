@@ -334,6 +334,10 @@ function ArchivePanel({ cards, onClose, onRestore, onClearAll }: { cards: CardTy
 // --- Календарь бронирования ---
 function CalendarModal({ cards, chatId, onClose }: { cards: CardType[], chatId?: string, onClose: () => void }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  
+  // НОВОЕ: Получаем цвет пользователя
+  const userColor = chatId ? getUserColor(chatId) : '#3b82f6'; 
+  
   const bookedDates = new Set(
     cards.filter(c => c.due_date && !c.is_archived && c.telegram_ids?.includes(chatId || '0')).map(c => c.due_date)
   );
@@ -371,16 +375,22 @@ function CalendarModal({ cards, chatId, onClose }: { cards: CardType[], chatId?:
             const isBooked = bookedDates.has(dateStr);
             const today = isToday(day);
             return (
-              <div key={day} className={`p-2 rounded-lg relative flex flex-col items-center justify-center text-sm transition-colors ${today ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 font-bold' : 'text-slate-700 dark:text-slate-200'} ${!today && isBooked ? 'bg-blue-100/60 dark:bg-blue-900/30 font-semibold' : ''}`}>
+              // ИЗМЕНЕНО: используем inline-стили с цветом пользователя (прозрачность 20% для фона)
+              <div 
+                key={day} 
+                style={isBooked && !today ? { backgroundColor: `${userColor}20`, color: userColor } : {}} 
+                className={`p-2 rounded-lg relative flex flex-col items-center justify-center text-sm transition-colors ${today ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 font-bold' : 'text-slate-700 dark:text-slate-200'} ${isBooked ? 'font-semibold' : ''}`}
+              >
                 {day}
-                {isBooked && !today && <span className="absolute bottom-1 w-1 h-1 bg-blue-500 rounded-full"></span>}
+                {isBooked && !today && <span style={{ backgroundColor: userColor }} className="absolute bottom-1 w-1.5 h-1.5 rounded-full"></span>}
               </div>
             );
           })}
         </div>
         <div className="mt-6 pt-4 border-t border-slate-200/60 dark:border-white/10 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
-          <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-          <span>Даты с забронированными карточками</span>
+          {/* ИЗМЕНЕНО: цвет точки в легенде */}
+          <span style={{ backgroundColor: userColor }} className="w-2 h-2 rounded-full"></span>
+          <span>Ваши забронированные даты</span>
         </div>
       </motion.div>
     </motion.div>
