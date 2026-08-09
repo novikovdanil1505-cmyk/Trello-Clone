@@ -550,7 +550,7 @@ export default function Home() {
             <h1 className="text-xl font-bold text-slate-800 dark:text-white mb-2">NOVIKOV PRODUCTION</h1>
             <p className="text-slate-500 dark:text-slate-400 mb-6 text-sm">Пожалуйста, откройте это приложение через нашего бота в Telegram, чтобы войти.</p>
             {/* ИЗМЕНЕНО: Ссылка ведет прямо на твоего бота. Замени ТВОЙ_БОТ_ЮЗЕРНЕЙМ на юзернейм бота (например, novikov_board_bot) */}
-            <a href="https://t.me/@nprodTrelloBot" target="_blank" rel="noopener noreferrer" className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-medium transition-colors shadow-md w-full">
+            <a href="https://t.me/nprodTrelloBot" target="_blank" rel="noopener noreferrer" className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-medium transition-colors shadow-md w-full">
               Открыть бота
             </a>
           </motion.div>
