@@ -31,6 +31,7 @@ const PAYMENT_STYLES: Record<string, { bg: string, dot: string, text: string }> 
   paid: { bg: "bg-green-100/60 dark:bg-green-900/20", dot: "bg-green-500", text: "Оплачено" },
 };
 
+// --- Иконки ---
 const SunIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg>);
 const MoonIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg>);
 const ArchiveIcon = ({ size = 24 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="5" x="2" y="3" rx="1" /><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" /><path d="M10 12h4" /></svg>);
@@ -38,6 +39,7 @@ const TrashIcon = ({ size = 16 }: { size?: number }) => (<svg xmlns="http://www.
 const CopyIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2, 2" /></svg>);
 const CheckIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>);
 const ChevronDownIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>);
+const CalendarIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" /></svg>);
 
 function Card({ card, telegramUsers, onOpen }: { card: CardType, telegramUsers: TelegramUser[], onOpen: (card: CardType) => void }) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id: card.id, data: { type: "Card", card } });
@@ -332,6 +334,87 @@ function ArchivePanel({ cards, onClose, onRestore, onClearAll }: { cards: CardTy
   );
 }
 
+// --- НОВЫЙ Компонент: Календарь бронирования ---
+function CalendarModal({ cards, onClose }: { cards: CardType[], onClose: () => void }) {
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  
+  // Собираем все уникальные даты бронирования (due_date), игнорируя архивные
+  const bookedDates = new Set(
+    cards.filter(c => c.due_date && !c.is_archived).map(c => c.due_date)
+  );
+
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  const monthName = currentMonth.toLocaleString('ru-RU', { month: 'long', year: 'numeric' });
+  
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOfWeek = new Date(year, month, 1).getDay(); // 0 - Вс, 1 - Пн...
+  const startOffset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1; // Сдвиг для понедельника
+
+  const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const blanksArray = Array.from({ length: startOffset }, (_, i) => i);
+
+  const formatDate = (day: number) => {
+    return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  };
+
+  const isToday = (day: number) => {
+    const today = new Date();
+    return day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+  };
+
+  const prevMonth = () => setCurrentMonth(new Date(year, month - 1, 1));
+  const nextMonth = () => setCurrentMonth(new Date(year, month + 1, 1));
+
+  return (
+    <motion.div className="fixed inset-0 bg-black/20 dark:bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+      <motion.div className="bg-white/60 dark:bg-zinc-900/80 backdrop-blur-2xl w-full max-w-sm rounded-3xl p-6 border border-white/80 dark:border-white/10 shadow-2xl" initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} onClick={(e) => e.stopPropagation()}>
+        
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-semibold text-slate-800 dark:text-white capitalize">{monthName}</h2>
+          <div className="flex gap-1">
+            <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
+            <button onClick={onClose} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-slate-400 dark:text-slate-500 text-xl leading-none ml-2">&times;</button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-7 gap-1 text-center text-xs text-slate-400 dark:text-slate-500 mb-2">
+          {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map(d => <div key={d} className="font-medium py-1">{d}</div>)}
+        </div>
+
+        <div className="grid grid-cols-7 gap-1 text-center">
+          {blanksArray.map((_, i) => <div key={`blank-${i}`} className="p-2"></div>)}
+          {daysArray.map(day => {
+            const dateStr = formatDate(day);
+            const isBooked = bookedDates.has(dateStr);
+            const today = isToday(day);
+            
+            return (
+              <div key={day} className={`p-2 rounded-lg relative flex flex-col items-center justify-center text-sm transition-colors
+                ${today ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 font-bold' : 'text-slate-700 dark:text-slate-200'}
+                ${!today && isBooked ? 'bg-blue-100/60 dark:bg-blue-900/30 font-semibold' : ''}
+              `}>
+                {day}
+                {isBooked && !today && <span className="absolute bottom-1 w-1 h-1 bg-blue-500 rounded-full"></span>}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-6 pt-4 border-t border-slate-200/60 dark:border-white/10 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
+          <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+          <span>Даты с забронированными карточками</span>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 // --- ГЛАВНАЯ ДОСКА ---
 export default function Home() {
   const [tgUser, setTgUser] = useState<{name: string, chat_id: string} | null>(null);
@@ -347,6 +430,9 @@ export default function Home() {
   const [editingCard, setEditingCard] = useState<CardType | null>(null);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   
+  // НОВОЕ: Состояние для календаря
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+
   const [pendingDelete, setPendingDelete] = useState<ColumnType | null>(null);
   const [undoTimer, setUndoTimer] = useState(0);
   const [isDark, setIsDark] = useState(false);
@@ -678,7 +764,6 @@ export default function Home() {
       <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-slate-300/40 dark:bg-zinc-700/30 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-slate-400/30 dark:bg-neutral-700/30 rounded-full blur-[120px] pointer-events-none"></div>
       
-      {/* ИЗМЕНЕНО: Убран текст "NP" */}
       <header className="relative z-10 flex items-center justify-between p-4 bg-white/40 dark:bg-white/5 backdrop-blur-2xl border-b border-white/60 dark:border-white/10 shadow-sm">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <select 
@@ -693,6 +778,10 @@ export default function Home() {
           </button>
         </div>
         <div className="flex items-center gap-2">
+          {/* НОВОЕ: Кнопка календаря */}
+          <button onClick={() => setIsCalendarOpen(true)} className="text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 p-2 rounded-xl transition-colors" title="Календарь бронирования">
+            <CalendarIcon />
+          </button>
           <button onClick={toggleTheme} className="text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 p-2 rounded-xl transition-colors" title="Сменить тему">{isDark ? <SunIcon /> : <MoonIcon />}</button>
           <button onClick={() => setIsArchiveOpen(true)} className="text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 px-3 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm font-medium"><ArchiveIcon size={18} /><span className="hidden sm:inline">Архив</span><span className="bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded-full text-xs">{archivedCards.length}</span></button>
         </div>
@@ -734,6 +823,13 @@ export default function Home() {
         
         <ArchiveDropZone isDragging={!!activeCard} />
       </DndContext>
+
+      {/* НОВОЕ: Рендер модального окна календаря */}
+      <AnimatePresence>
+        {isCalendarOpen && (
+          <CalendarModal cards={cards} onClose={() => setIsCalendarOpen(false)} />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>{editingCard && (<CardModal card={editingCard} telegramUsers={telegramUsers} onClose={() => setEditingCard(null)} onUpdate={handleUpdateCard} onArchive={(id) => handleToggleArchive(id, true)} onDeleteTelegramUser={handleDeleteTelegramUser} />)}</AnimatePresence>
       <AnimatePresence>{isArchiveOpen && (<ArchivePanel cards={archivedCards} onClose={() => setIsArchiveOpen(false)} onRestore={(id) => handleToggleArchive(id, false)} onClearAll={handleClearArchive} />)}</AnimatePresence>
