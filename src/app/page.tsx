@@ -162,7 +162,7 @@ function DateSection({ title, dateStr, timeStr, onChange, useTimeRange = false }
     <div className="mb-6">
       <div className="flex justify-between items-center mb-2">
         <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{title}</h3>
-        {hasDate ? (<button type="button" onClick={toggleDate" className="text-xs text-slate-400 hover:text-red-500 flex items-center gap-1"><TrashIcon size={12} /> Убрать дату</button>) : (<button type="button" onClick={toggleDate} className="text-xs text-slate-400 hover:text-slate-600">+ Добавить дату</button>)}
+        {hasDate ? (<button type="button" onClick={toggleDate} className="text-xs text-slate-400 hover:text-red-500 flex items-center gap-1"><TrashIcon size={12} /> Убрать дату</button>) : (<button type="button" onClick={toggleDate} className="text-xs text-slate-400 hover:text-slate-600">+ Добавить дату</button>)}
       </div>
       {hasDate && (
         <div className="flex flex-col gap-3 bg-white/80 dark:bg-zinc-800/50 p-4 rounded-2xl border border-white/80 dark:border-white/10 shadow-sm">
@@ -361,7 +361,7 @@ function CalendarModal({ cards, onClose }: { cards: CardType[], onClose: () => v
             <button onClick={onClose} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-slate-400 dark:text-slate-500 text-xl leading-none ml-2">&times;</button>
           </div>
         </div>
-        <div className="Grid grid-cols-7 gap-1 text-center text-xs text-slate-400 dark:text-slate-500 mb-2">{['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map(d => <div key={d} className="font-medium py-1">{d}</div>)}</div>
+        <div className="grid grid-cols-7 gap-1 text-center text-xs text-slate-400 dark:text-slate-500 mb-2">{['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map(d => <div key={d} className="font-medium py-1">{d}</div>)}</div>
         <div className="grid grid-cols-7 gap-1 text-center">
           {blanksArray.map((_, i) => <div key={`blank-${i}`} className="p-2"></div>)}
           {daysArray.map(day => {
