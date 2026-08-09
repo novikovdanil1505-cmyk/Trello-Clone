@@ -332,9 +332,11 @@ function ArchivePanel({ cards, onClose, onRestore, onClearAll }: { cards: CardTy
 }
 
 // --- Календарь бронирования ---
-function CalendarModal({ cards, onClose }: { cards: CardType[], onClose: () => void }) {
+function CalendarModal({ cards, chatId, onClose }: { cards: CardType[], chatId?: string, onClose: () => void }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const bookedDates = new Set(cards.filter(c => c.due_date && !c.is_archived).map(c => c.due_date));
+  const bookedDates = new Set(
+    cards.filter(c => c.due_date && !c.is_archived && c.telegram_ids?.includes(chatId || '0')).map(c => c.due_date)
+  );
 
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
@@ -747,7 +749,7 @@ export default function Home() {
       </DndContext>
 
       <AnimatePresence>
-        {isCalendarOpen && (<CalendarModal cards={cards} onClose={() => setIsCalendarOpen(false)} />)}
+        {isCalendarOpen && (<CalendarModal cards={cards} chatId={tgUser?.chat_id} onClose={() => setIsCalendarOpen(false)} />)}
       </AnimatePresence>
 
       <AnimatePresence>{editingCard && (<CardModal card={editingCard} telegramUsers={telegramUsers} onClose={() => setEditingCard(null)} onUpdate={handleUpdateCard} onArchive={(id) => handleToggleArchive(id, true)} onDeleteTelegramUser={handleDeleteTelegramUser} />)}</AnimatePresence>
