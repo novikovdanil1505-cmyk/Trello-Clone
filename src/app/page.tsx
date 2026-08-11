@@ -282,11 +282,9 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
   const toggleUser = (chatId: string) => { setSelectedUsers(prev => prev.includes(chatId) ? prev.filter(id => id !== chatId) : [...prev, chatId]); };
 
   return (
-    <motion.div className="fixed inset-0 bg-black/40 dark:bg-black/70 z-50 flex items-center justify-center p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
-      <motion.div className="bg-white/90 dark:bg-zinc-900/90 w-full max-w-md rounded-3xl p-6 border border-white/80 dark:border-white/10 shadow-2xl overflow-y-auto max-h-[90vh] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 30, opacity: 0 }} transition={{ duration: 0.2 }} onClick={(e) => e.stopPropagation()}>        <div className="flex justify-between items-start mb-6">
+    <motion.div className="fixed inset-0 bg-black/40 dark:bg-black/70 z-50 flex items-center justify-center p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={handleSave}>      <motion.div className="bg-white/90 dark:bg-zinc-900/90 w-full max-w-md rounded-3xl p-6 border border-white/80 dark:border-white/10 shadow-2xl overflow-y-auto max-h-[90vh] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 30, opacity: 0 }} transition={{ duration: 0.2 }} onClick={(e) => e.stopPropagation()}>        <div className="flex justify-between items-start mb-6">
           <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="bg-transparent text-xl font-semibold text-slate-800 dark:text-white outline-none w-full focus:border-b focus:border-slate-400" />
-          <button onClick={onClose} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 text-2xl ml-4 leading-none">&times;</button>
-        </div>
+          <button onClick={handleSave} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 text-2xl ml-4 leading-none">&times;</button>        </div>
 
         <div className="mb-6">
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Данные клиента</h3>
@@ -304,13 +302,6 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
           <PaymentSelect value={paymentStatus} onChange={setPaymentStatus} />
         </div>
 
-        <div className="mb-6">
-          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Материалы</h3>
-          <div className="space-y-3">
-            <input type="url" value={sourceMaterial} onChange={(e) => setSourceMaterial(e.target.value)} placeholder="Ссылка на исходный материал" className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-yellow-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500" />
-            <input type="url" value={finishedMaterial} onChange={(e) => setFinishedMaterial(e.target.value)} placeholder="Ссылка на готовый материал" className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-green-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500" />
-          </div>
-        </div>
 
         <div className="mb-6">
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Уведомить в Telegram</h3>
@@ -323,6 +314,19 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
         <div className="mb-6">
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Комментарий</h3>
           <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Напишите что-нибудь..." className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-slate-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 resize-none" rows={4} />
+        </div>
+
+                <div className="mb-6">
+          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Комментарий</h3>
+          <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Напишите что-нибудь..." className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-slate-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 resize-none" rows={4} />
+        </div>
+
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Материалы</h3>
+          <div className="space-y-3">
+            <input type="url" value={sourceMaterial} onChange={(e) => setSourceMaterial(e.target.value)} placeholder="Ссылка на исходный материал" className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-yellow-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500" />
+            <input type="url" value={finishedMaterial} onChange={(e) => setFinishedMaterial(e.target.value)} placeholder="Ссылка на готовый материал" className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-green-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500" />
+          </div>
         </div>
 
         <div className="flex gap-3">
