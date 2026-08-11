@@ -13,6 +13,7 @@ type CardType = {
   deadline_date?: string | null; deadline_time?: string | null;
   comment?: string | null; is_archived?: boolean; client_name?: string | null; phone_number?: string | null; telegram_ids?: string | null;
   position?: number; payment_status?: string | null;
+  source_material_url?: string | null; finished_material_url?: string | null;
 };
 type ColumnType = { id: string; title: string; position: number; board_id: string };
 type TelegramUser = { id: string; chat_id: string; name: string; role?: string };
@@ -35,7 +36,7 @@ const ArchiveIcon = ({ size = 24 }: { size?: number }) => (<svg xmlns="http://ww
 const TrashIcon = ({ size = 16 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>);
 const CopyIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2, 2" /></svg>);
 const CheckIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>);
-const ChevronDownIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>);
+const ExternalLinkIcon = ({ size = 12 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></svg>);const ChevronDownIcon = ({ size = 18 }: { size?: number }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>);
 const CalendarIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" /></svg>);
 
 function Card({ card, telegramUsers, onOpen }: { card: CardType, telegramUsers: TelegramUser[], onOpen: (card: CardType) => void }) {
@@ -60,6 +61,16 @@ function Card({ card, telegramUsers, onOpen }: { card: CardType, telegramUsers: 
           </span>
         )}
         {card.comment && <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md flex items-center gap-1">💬</span>}
+        {card.source_material_url && (
+          <a href={card.source_material_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="bg-yellow-100/60 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 px-2 py-1 rounded-md flex items-center gap-1 font-medium">
+            Исходник <ExternalLinkIcon size={12} />
+          </a>
+        )}
+        {card.finished_material_url && (
+          <a href={card.finished_material_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="bg-green-100/60 dark:bg-green-900/20 text-green-600 dark:text-green-400 px-2 py-1 rounded-md flex items-center gap-1 font-medium">
+            Готовый <ExternalLinkIcon size={12} />
+          </a>
+        )}
       </div>
     </motion.div>
   );
@@ -247,7 +258,8 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
   const [selectedUsers, setSelectedUsers] = useState<string[]>(card.telegram_ids ? card.telegram_ids.split(',').filter(Boolean) : []);
   const [copied, setCopied] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(card.payment_status || null);
-
+  const [sourceMaterial, setSourceMaterial] = useState(card.source_material_url || "");
+  const [finishedMaterial, setFinishedMaterial] = useState(card.finished_material_url || "");
   const [dueDate, setDueDate] = useState<string | null>(card.due_date);
   const [dueTime, setDueTime] = useState<string>(card.due_time || "");
   const [deadlineDate, setDeadlineDate] = useState<string | null>(card.deadline_date);
@@ -259,7 +271,9 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
       title, comment, due_date: dueDate, due_time: dueTime, 
       deadline_date: deadlineDate, deadline_time: deadlineTime,
       client_name: clientName, phone_number: phoneNumber, telegram_ids: cleanTelegramIds,
-      payment_status: paymentStatus
+      payment_status: paymentStatus,
+      source_material_url: sourceMaterial || null,
+      finished_material_url: finishedMaterial || null
     });
     onClose();
   };
@@ -290,6 +304,14 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
         <div className="mb-6">
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Статус оплаты</h3>
           <PaymentSelect value={paymentStatus} onChange={setPaymentStatus} />
+        </div>
+
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Материалы</h3>
+          <div className="space-y-3">
+            <input type="url" value={sourceMaterial} onChange={(e) => setSourceMaterial(e.target.value)} placeholder="Ссылка на исходный материал" className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-yellow-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500" />
+            <input type="url" value={finishedMaterial} onChange={(e) => setFinishedMaterial(e.target.value)} placeholder="Ссылка на готовый материал" className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-green-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500" />
+          </div>
         </div>
 
         <div className="mb-6">
