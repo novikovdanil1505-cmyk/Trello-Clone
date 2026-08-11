@@ -15,7 +15,7 @@ type CardType = {
   position?: number; payment_status?: string | null;
 };
 type ColumnType = { id: string; title: string; position: number; board_id: string };
-type TelegramUser = { id: string; chat_id: string; name: string };
+type TelegramUser = { id: string; chat_id: string; name: string; role?: string };
 
 const USER_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'];
 const getUserColor = (id: string) => {
@@ -325,7 +325,7 @@ function ArchivePanel({ cards, onClose, onRestore, onClearAll }: { cards: CardTy
         <div className="flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {cards.length === 0 ? (<div className="text-center mt-20 text-slate-500 dark:text-slate-400"><p className="text-5xl mb-4">🗑️</p><p>Архив пуст</p></div>) : (<div className="space-y-3">{cards.map(card => (<motion.div key={card.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8 }} className="bg-white/50 dark:bg-zinc-800/50 p-3 rounded-xl border border-white/80 dark:border-white/10 shadow-sm flex justify-between items-center gap-2"><p className="text-sm text-slate-800 dark:text-slate-100 font-medium truncate flex-1">{card.title}</p><button onClick={() => onRestore(card.id)} className="text-xs bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors font-medium whitespace-nowrap">Вернуть</button></motion.div>))}</div>)}
         </div>
-        {cards.length > 0 && (<div className="pt-4 mt-4 border-t border-slate-200/60 dark:border-white/10"><button onClick={onClearAll} className="w-full bg-red-500/90 hover:bg-red-500 text-white py-2.5 rounded-xl text-sm font-medium transition-colors shadow-sm flex items-center justify-center gap-2"><TrashIcon size={16} /> Очистить архив</button></div>)}
+          {cards.length > 0 && onClearAll && (<div className="pt-4 mt-4 border-t border-slate-200/60 dark:border-white/10"><button onClick={onClearAll} className="w-full bg-red-500/90 hover:bg-red-500 text-white py-2.5 rounded-xl text-sm font-medium transition-colors shadow-sm flex items-center justify-center gap-2"><TrashIcon size={16} /> Очистить архив</button></div>)}
       </motion.div>
     </motion.div>
   );
@@ -399,7 +399,7 @@ function CalendarModal({ cards, chatId, onClose }: { cards: CardType[], chatId?:
 
 // --- ГЛАВНАЯ ДОСКА ---
 export default function Home() {
-  const [tgUser, setTgUser] = useState<{name: string, chat_id: string} | null>(null);
+  const [tgUser, setTgUser] = useState<{name: string, chat_id: string, role?: string} | null>(null);
   const [loading, setLoading] = useState(true);
   
   const [currentBoardId, setCurrentBoardId] = useState<string | null>(null);
@@ -433,14 +433,14 @@ export default function Home() {
       const tgUserData = tg.initDataUnsafe?.user;
       if (tgUserData && tgUserData.id) {
         const chatId = tgUserData.id.toString();
-        supabase.from('telegram_users').select('*').eq('chat_id', chatId).maybeSingle().then(({ data }) => {
+              supabase.from('telegram_users').select('*').eq('chat_id', chatId).maybeSingle().then(({ data }) => {
           if (data) {
-            setTgUser({ name: data.name, chat_id: data.chat_id });
+            setTgUser({ name: data.name, chat_id: data.chat_id, role: data.role });
           } else {
             const newName = [tgUserData.first_name, tgUserData.last_name].filter(Boolean).join(' ') || tgUserData.username || "Telegram User";
             supabase.from('telegram_users').insert([{ chat_id: chatId, name: newName, username: tgUserData.username }]).select().single().then(({ data: newUser }) => {
               if (newUser) {
-                setTgUser({ name: newUser.name, chat_id: newUser.chat_id });
+                setTgUser({ name: newUser.name, chat_id: newUser.chat_id, role: newUser.role });
                 setTelegramUsers(prev => [...prev, newUser]);
               }
             });
@@ -538,7 +538,10 @@ export default function Home() {
 
   useEffect(() => { if (undoTimer > 0) { const timer = setTimeout(() => setUndoTimer(prev => prev - 1), 1000); return () => clearTimeout(timer); } else if (pendingDelete) { supabase.from('columns').delete().eq('id', pendingDelete.id).then(); setPendingDelete(null); } }, [undoTimer, pendingDelete]);
   const sensors = useSensors(useSensor(MouseSensor, { activationConstraint: { distance: 10 } }), useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }));
-
+  // НОВОЕ: Разделение прав для 5 ролей (admin, manager, operator, montazher, viewer)
+  const canEdit = ['admin', 'manager', 'operator', 'montazher'].includes(tgUser?.role || '');
+  const canCreate = ['admin', 'manager', 'operator'].includes(tgUser?.role || '');
+  const isAdmin = tgUser?.role === 'admin';
   if (loading) {
     return (
       <main className="bg-slate-100 dark:bg-slate-950 h-screen flex flex-col items-center justify-center">
@@ -721,8 +724,7 @@ export default function Home() {
         </div>
       </header>
 
-      <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setActiveCard(null)} collisionDetection={closestCorners} measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}>
-        <div className="relative z-10 flex-1 flex gap-4 p-6 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      <DndContext sensors={canEdit ? sensors : []} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setActiveCard(null)} collisionDetection={closestCorners} measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}>        <div className="relative z-10 flex-1 flex gap-4 p-6 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <AnimatePresence>
             {columns.map((col) => {
               const colCards = visibleCards.filter((c) => c.column_id === col.id);
@@ -732,7 +734,7 @@ export default function Home() {
                     <h2 className="font-semibold text-slate-700 dark:text-slate-200 text-sm uppercase tracking-wider">{col.title}</h2>
                     <div className="flex items-center gap-1">
                       <span className="bg-black/5 dark:bg-white/10 text-slate-600 dark:text-slate-300 text-xs px-2 py-1 rounded-full font-medium">{colCards.length}</span>
-                      <button onClick={() => handleDeleteColumn(col)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-full p-1 transition-all duration-200" title="Удалить колонку"><TrashIcon size={16} /></button>
+                      {isAdmin && <button onClick={() => handleDeleteColumn(col)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-full p-1 transition-all duration-200" title="Удалить колонку"><TrashIcon size={16} /></button>}
                     </div>
                   </div>
 
@@ -740,15 +742,17 @@ export default function Home() {
                     <DroppableContainer id={col.id}>{colCards.map((card) => <Card key={card.id} card={card} telegramUsers={telegramUsers} onOpen={setEditingCard} />)}</DroppableContainer>
                   </SortableContext>
                   
-                  <AddCard columnId={col.id} onAdd={handleAddCard} />
+                {canCreate && <AddCard columnId={col.id} onAdd={handleAddCard} />}
                 </motion.div>
               );
             })}
           </AnimatePresence>
           
-          <div className="w-72 flex-shrink-0">
-            <button onClick={handleAddColumn} className="bg-white/30 dark:bg-white/5 backdrop-blur-xl border border-dashed border-slate-300 dark:border-white/10 hover:border-slate-400 dark:hover:border-white/30 hover:bg-white/50 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white font-medium w-full py-3 rounded-3xl flex items-center justify-center gap-2 transition-all shadow-sm">+ Добавить колонку</button>
-          </div>
+          {isAdmin && (
+            <div className="w-72 flex-shrink-0">
+              <button onClick={handleAddColumn} className="bg-white/30 dark:bg-white/5 backdrop-blur-xl border border-dashed border-slate-300 dark:border-white/10 hover:border-slate-400 dark:hover:border-white/30 hover:bg-white/50 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white font-medium w-full py-3 rounded-3xl flex items-center justify-center gap-2 transition-all shadow-sm">+ Добавить колонку</button>
+            </div>
+          )}
         </div>
 
         <DragOverlay>
@@ -763,7 +767,7 @@ export default function Home() {
       </AnimatePresence>
 
       <AnimatePresence>{editingCard && (<CardModal card={editingCard} telegramUsers={telegramUsers} onClose={() => setEditingCard(null)} onUpdate={handleUpdateCard} onArchive={(id) => handleToggleArchive(id, true)} onDeleteTelegramUser={handleDeleteTelegramUser} />)}</AnimatePresence>
-      <AnimatePresence>{isArchiveOpen && (<ArchivePanel cards={archivedCards} onClose={() => setIsArchiveOpen(false)} onRestore={(id) => handleToggleArchive(id, false)} onClearAll={handleClearArchive} />)}</AnimatePresence>
+      <AnimatePresence>{isArchiveOpen && (<ArchivePanel cards={archivedCards} onClose={() => setIsArchiveOpen(false)} onRestore={(id) => handleToggleArchive(id, false)} onClearAll={isAdmin ? handleClearArchive : undefined} />)}</AnimatePresence>
       <AnimatePresence>{pendingDelete && (<motion.div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-slate-800/80 dark:bg-zinc-100/80 backdrop-blur-xl text-white dark:text-zinc-900 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-4 border border-white/10 dark:border-black/10" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} transition={{ type: "spring", stiffness: 300, damping: 25 }}><span className="text-sm font-medium">Колонка удалена</span><button onClick={handleUndoDelete} className="text-slate-300 dark:text-slate-700 font-semibold text-sm hover:text-white dark:hover:text-black transition-colors flex items-center gap-1 bg-white/10 dark:bg-black/10 px-3 py-1 rounded-lg">Отменить <span className="text-xs w-5 text-center">({undoTimer})</span></button></motion.div>)}</AnimatePresence>
     </main>
   );
