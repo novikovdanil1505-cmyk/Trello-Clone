@@ -528,9 +528,47 @@ export default function Home() {
     fetchBoardData();
 
     const channel = supabase.channel(`public:board_data:${currentBoardId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'columns' }, fetchBoardData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'cards' }, fetchBoardData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'telegram_users' }, fetchBoardData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'columns' }, (payload) => {
+        if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+          setColumns(prev => {
+            const exists = prev.find(c => c.id === payload.new.id);
+            let updated;
+            if (exists) updated = prev.map(c => c.id === payload.new.id ? payload.new as ColumnType : c);
+            else updated = [...prev, payload.new as ColumnType];
+            return [...updated].sort((a, b) => a.position - b.position);
+          });
+        } else if (payload.eventType === 'DELETE') {
+          setColumns(prev => prev.filter(c => c.id !== payload.old.id));
+        }
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cards' }, (payload) => {
+        if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+          setCards(prev => {
+            const exists = prev.find(c => c.id === payload.new.id);
+            let updated;
+            if (exists) updated = prev.map(c => c.id === payload.new.id ? payload.new as CardType : c);
+            else updated = [...prev, payload.new as CardType];
+            // Сортируем, чтобы карточки сразу вставали в нужном порядке
+            return [...updated].sort((a, b) => {
+              if (a.column_id === b.column_id) return (a.position || 0) - (b.position || 0);
+              return 0;
+            });
+          });
+        } else if (payload.eventType === 'DELETE') {
+          setCards(prev => prev.filter(c => c.id !== payload.old.id));
+        }
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'telegram_users' }, (payload) => {
+        if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+          setTelegramUsers(prev => {
+            const exists = prev.find(u => u.id === payload.new.id);
+            if (exists) return prev.map(u => u.id === payload.new.id ? payload.new as TelegramUser : u);
+            return [...prev, payload.new as TelegramUser];
+          });
+        } else if (payload.eventType === 'DELETE') {
+          setTelegramUsers(prev => prev.filter(u => u.id !== payload.old.id));
+        }
+      })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
