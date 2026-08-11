@@ -638,7 +638,7 @@ export default function Home() {
 
   function onDragStart(e: DragStartEvent) { if (e.active.data.current?.type === "Card") setActiveCard(e.active.data.current.card); }
   
-    function onDragEnd(e: DragEndEvent) {
+     function onDragEnd(e: DragEndEvent) {
     const { active, over } = e;
     setActiveCard(null);
     if (!over) return;
@@ -668,7 +668,6 @@ export default function Home() {
         newColId = overId as string;
       }
       
-      // Создаем копию объекта для иммутабельного обновления
       let updatedActiveCard = { ...activeCard, column_id: newColId };
       
       if (oldColId !== newColId) {
@@ -726,22 +725,28 @@ export default function Home() {
         updatedCards.forEach(c => {
           if (c.column_id === colId) {
             const isMovedCard = c.id === activeId;
-            const tgChanged = isMovedCard && c.telegram_ids !== oldTgIds; 
             
-            if (c.position !== pos || tgChanged) {
-              c.position = pos;
-              if (tgChanged) {
-                supabase.from('cards').update({ column_id: c.column_id, position: pos, telegram_ids: c.telegram_ids }).eq('id', c.id).then();
-              } else {
-                supabase.from('cards').update({ column_id: c.column_id, position: pos }).eq('id', c.id).then();
-              }
+            // ИСПРАВЛЕНО: Всегда сохраняем перемещенную карточку, даже если её позиция не изменилась
+            if (isMovedCard) {
+              updatedActiveCard.position = pos;
+              supabase.from('cards').update({ 
+                column_id: updatedActiveCard.column_id, 
+                position: pos, 
+                telegram_ids: updatedActiveCard.telegram_ids 
+              }).eq('id', updatedActiveCard.id).then();
+            } else if (c.position !== pos) {
+              // Обновляем только те карточки, у которых изменилась позиция
+              c.position = pos; 
+              supabase.from('cards').update({ 
+                column_id: c.column_id, 
+                position: pos 
+              }).eq('id', c.id).then();
             }
             pos++;
           }
         });
       });
       
-      // Сортируем массив перед возвращением, чтобы карточки сразу встали на нужные места
       return [...updatedCards].sort((a, b) => {
         if (a.column_id === b.column_id) return (a.position || 0) - (b.position || 0);
         return 0;
