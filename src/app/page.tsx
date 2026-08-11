@@ -631,7 +631,7 @@ export default function Home() {
 
   function onDragStart(e: DragStartEvent) { if (e.active.data.current?.type === "Card") setActiveCard(e.active.data.current.card); }
   
-  function onDragEnd(e: DragEndEvent) {
+    function onDragEnd(e: DragEndEvent) {
     const { active, over } = e;
     setActiveCard(null);
     if (!over) return;
@@ -645,12 +645,14 @@ export default function Home() {
     }
     const activeId = active.id;
     const overId = over.id;
-      setCards(prev => {
+    
+    setCards(prev => {
       const activeCard = prev.find(c => c.id === activeId);
       if (!activeCard) return prev;
       const oldColId = activeCard.column_id;
-      const oldTgIds = activeCard.telegram_ids; // Вынесли переменную наверх
+      const oldTgIds = activeCard.telegram_ids; 
       let newColId = oldColId;
+      
       if (overType === "Card") {
         const overCard = prev.find(c => c.id === overId);
         if (!overCard) return prev;
@@ -658,66 +660,66 @@ export default function Home() {
       } else if (overType === "Column") {
         newColId = overId as string;
       }
+      
+      // Создаем копию объекта для иммутабельного обновления
+      let updatedActiveCard = { ...activeCard, column_id: newColId };
+      
       if (oldColId !== newColId) {
         const colTitle = columns.find(c => c.id === newColId)?.title?.toLowerCase() || '';
         
         if (colTitle.includes('монтаж')) {
           const currentTgIds = oldTgIds ? oldTgIds.split(',').filter(Boolean) : [];
-          // Оставляем только не-операторов
           const filteredIds = currentTgIds.filter(id => {
             const user = telegramUsers.find(u => u.chat_id === id);
             return user?.role !== 'operator';
           });
-          // Находим всех монтажников
           const montazhers = telegramUsers.filter(u => u.role === 'montazher').map(u => u.chat_id);
-          // Объединяем (уникальные)
           const newTgIds = Array.from(new Set([...filteredIds, ...montazhers]));
           
-          activeCard.telegram_ids = newTgIds.length > 0 ? newTgIds.join(',') : null;
+          updatedActiveCard.telegram_ids = newTgIds.length > 0 ? newTgIds.join(',') : null;
           
-          // Уведомляем новых назначенных монтажников
           const newlyAssigned = montazhers.filter(id => !currentTgIds.includes(id));
           if (newlyAssigned.length > 0) {
             fetch('/api/telegram', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ chatIds: newlyAssigned, cardData: { title: activeCard.title }, type: 'new' })
+              body: JSON.stringify({ chatIds: newlyAssigned, cardData: { title: updatedActiveCard.title }, type: 'new' })
             }).catch(err => console.error("Telegram API error:", err));
           }
-          } else {
-            // Убираем монтажеров при переносе в другие колонки
-            const currentTgIds = activeCard.telegram_ids ? activeCard.telegram_ids.split(',').filter(Boolean) : [];
-            const filteredIds = currentTgIds.filter(id => {
-              const user = telegramUsers.find(u => u.chat_id === id);
-              return user?.role !== 'montazher';
-            });
-            
-            activeCard.telegram_ids = filteredIds.length > 0 ? filteredIds.join(',') : null;
-            
-            if (filteredIds.length > 0 && colTitle) {
-              fetch('/api/telegram', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chatIds: filteredIds, cardData: { title: activeCard.title }, type: 'status', newStatus: colTitle })
-              }).catch(err => console.error("Telegram API error:", err));
-            }
+        } else {
+          const currentTgIds = oldTgIds ? oldTgIds.split(',').filter(Boolean) : [];
+          const filteredIds = currentTgIds.filter(id => {
+            const user = telegramUsers.find(u => u.chat_id === id);
+            return user?.role !== 'montazher';
+          });
+          
+          updatedActiveCard.telegram_ids = filteredIds.length > 0 ? filteredIds.join(',') : null;
+          
+          if (filteredIds.length > 0 && colTitle) {
+            fetch('/api/telegram', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ chatIds: filteredIds, cardData: { title: updatedActiveCard.title }, type: 'status', newStatus: colTitle })
+            }).catch(err => console.error("Telegram API error:", err));
           }
+        }
       }
-      activeCard.column_id = newColId;
+      
       let updatedCards = prev.filter(c => c.id !== activeId);
       if (overType === "Card") {
         const overIndex = updatedCards.findIndex(c => c.id === overId);
-        updatedCards.splice(overIndex, 0, activeCard);
+        updatedCards.splice(overIndex, 0, updatedActiveCard);
       } else {
-        updatedCards.push(activeCard);
+        updatedCards.push(updatedActiveCard);
       }
+      
       const affectedCols = new Set([oldColId, newColId]);
       affectedCols.forEach(colId => {
         let pos = 1;
         updatedCards.forEach(c => {
           if (c.column_id === colId) {
-            const isMovedCard = c.id === activeCard.id;
-            const tgChanged = isMovedCard && c.telegram_ids !== oldTgIds; // Проверяем, изменились ли юзеры
+            const isMovedCard = c.id === activeId;
+            const tgChanged = isMovedCard && c.telegram_ids !== oldTgIds; 
             
             if (c.position !== pos || tgChanged) {
               c.position = pos;
@@ -731,10 +733,14 @@ export default function Home() {
           }
         });
       });
-      return updatedCards;
+      
+      // Сортируем массив перед возвращением, чтобы карточки сразу встали на нужные места
+      return [...updatedCards].sort((a, b) => {
+        if (a.column_id === b.column_id) return (a.position || 0) - (b.position || 0);
+        return 0;
+      });
     });
   }
-
   async function handleAddCard(column_id: string, title: string) {
     const cardsInColumn = cards.filter(c => c.column_id === column_id && !c.is_archived).length; const newPosition = cardsInColumn + 1;
     const { data, error } = await supabase.from('cards').insert([{ title, column_id, position: newPosition }]).select();
