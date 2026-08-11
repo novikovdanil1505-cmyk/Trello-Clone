@@ -431,7 +431,6 @@ export default function Home() {
   const [pendingDelete, setPendingDelete] = useState<ColumnType | null>(null);
   const [undoTimer, setUndoTimer] = useState(0);
   const [isDark, setIsDark] = useState(false);
-  const [rtStatus, setRtStatus] = useState("Connecting...");
 
   useEffect(() => {
     const tg = (window as any).Telegram?.WebApp;
@@ -530,7 +529,6 @@ export default function Home() {
 
     const channel = supabase.channel(`public:board_data:${currentBoardId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'columns' }, (payload) => {
-        console.log("🔴 Realtime COLUMNS event:", payload);
         if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
           setColumns(prev => {
             const exists = prev.find(c => c.id === payload.new.id);
@@ -544,8 +542,6 @@ export default function Home() {
         }
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cards' }, (payload) => {
-        console.log("🔴 Realtime CARDS event:", payload);
-        setRtStatus("GOT CARD EVENT!"); // Временная метка для проверки
         if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
           setCards(prev => {
             const exists = prev.find(c => c.id === payload.new.id);
@@ -562,7 +558,6 @@ export default function Home() {
         }
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'telegram_users' }, (payload) => {
-        console.log("🔴 Realtime USERS event:", payload);
         if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
           setTelegramUsers(prev => {
             const exists = prev.find(u => u.id === payload.new.id);
@@ -573,10 +568,7 @@ export default function Home() {
           setTelegramUsers(prev => prev.filter(u => u.id !== payload.old.id));
         }
       })
-      .subscribe((status) => {
-        console.log("🟢 Supabase Realtime Channel Status:", status);
-        setRtStatus(status === 'SUBSCRIBED' ? 'SUBSCRIBED' : 'ERROR');
-      });
+      .subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, [tgUser, currentBoardId]);
@@ -828,15 +820,9 @@ export default function Home() {
       <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-slate-400/30 dark:bg-neutral-700/30 rounded-full blur-[120px] pointer-events-none"></div>
       
       <header className="relative z-10 flex items-center justify-between p-4 bg-white/40 dark:bg-white/5 backdrop-blur-2xl border-b border-white/60 dark:border-white/10 shadow-sm">
-        <div className="flex items-center gap-2">
-          <h1 onClick={toggleTheme} className="text-slate-800 dark:text-white font-semibold text-lg tracking-tight cursor-pointer select-none" title="Нажмите, чтобы сменить тему">
-            NOVIKOV
-          </h1>
-          {/* ВРЕМЕННЫЙ ИНДИКАТОР СТАТУСА REALTIME */}
-          <span className={`text-[10px] px-2 py-1 rounded-full font-bold ${rtStatus === 'SUBSCRIBED' ? 'bg-green-500/20 text-green-600' : 'bg-red-500/20 text-red-600'}`}>
-            RT: {rtStatus}
-          </span>
-        </div>
+        <h1 onClick={toggleTheme} className="text-slate-800 dark:text-white font-semibold text-lg tracking-tight cursor-pointer select-none" title="Нажмите, чтобы сменить тему">
+          NOVIKOV
+        </h1>
         <div className="flex items-center gap-2">
           <button onClick={() => setIsCalendarOpen(true)} className="text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 p-2 rounded-xl transition-colors" title="Календарь бронирования">
             <CalendarIcon />
