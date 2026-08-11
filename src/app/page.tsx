@@ -607,10 +607,11 @@ export default function Home() {
     }
     const activeId = active.id;
     const overId = over.id;
-    setCards(prev => {
+      setCards(prev => {
       const activeCard = prev.find(c => c.id === activeId);
       if (!activeCard) return prev;
       const oldColId = activeCard.column_id;
+      const oldTgIds = activeCard.telegram_ids; // Вынесли переменную наверх
       let newColId = oldColId;
       if (overType === "Card") {
         const overCard = prev.find(c => c.id === overId);
@@ -621,7 +622,6 @@ export default function Home() {
       }
       if (oldColId !== newColId) {
         const colTitle = columns.find(c => c.id === newColId)?.title?.toLowerCase() || '';
-        const oldTgIds = activeCard.telegram_ids; // Сохраняем старые ID для БД
         
         if (colTitle.includes('монтаж')) {
           const currentTgIds = oldTgIds ? oldTgIds.split(',').filter(Boolean) : [];
