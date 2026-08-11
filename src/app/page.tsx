@@ -201,7 +201,7 @@ function DateSection({ title, dateStr, timeStr, onChange, useTimeRange = false }
 
 function UserSelectDropdown({ users, selectedUsers, onToggle, onDeleteUser }: { users: TelegramUser[], selectedUsers: string[], onToggle: (chatId: string) => void, onDeleteUser: (chatId: string) => void }) {
   const [isOpen, setIsOpen] = useState(false);
-  const availableUsers = users.filter(u => u.role !== 'manager'); // Скрываем менеджеров
+  const availableUsers = users.filter(u => u.role !== 'manager' && u.role !== 'montazher'); // Скрываем менеджеров и монтажеров
 
   return (
     <div className="relative">
@@ -646,16 +646,24 @@ export default function Home() {
               body: JSON.stringify({ chatIds: newlyAssigned, cardData: { title: activeCard.title }, type: 'new' })
             }).catch(err => console.error("Telegram API error:", err));
           }
-        } else {
-          const chatIds = activeCard.telegram_ids ? activeCard.telegram_ids.split(',').filter(Boolean) : [];
-          if (chatIds.length > 0 && colTitle) {
-            fetch('/api/telegram', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ chatIds, cardData: { title: activeCard.title }, type: 'status', newStatus: colTitle })
-            }).catch(err => console.error("Telegram API error:", err));
+          } else {
+            // Убираем монтажеров при переносе в другие колонки
+            const currentTgIds = activeCard.telegram_ids ? activeCard.telegram_ids.split(',').filter(Boolean) : [];
+            const filteredIds = currentTgIds.filter(id => {
+              const user = telegramUsers.find(u => u.chat_id === id);
+              return user?.role !== 'montazher';
+            });
+            
+            activeCard.telegram_ids = filteredIds.length > 0 ? filteredIds.join(',') : null;
+            
+            if (filteredIds.length > 0 && colTitle) {
+              fetch('/api/telegram', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chatIds: filteredIds, cardData: { title: activeCard.title }, type: 'status', newStatus: colTitle })
+              }).catch(err => console.error("Telegram API error:", err));
+            }
           }
-        }
       }
       activeCard.column_id = newColId;
       let updatedCards = prev.filter(c => c.id !== activeId);
