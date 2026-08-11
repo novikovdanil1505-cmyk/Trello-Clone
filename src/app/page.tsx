@@ -529,6 +529,7 @@ export default function Home() {
 
     const channel = supabase.channel(`public:board_data:${currentBoardId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'columns' }, (payload) => {
+        console.log("🔴 Realtime COLUMNS event:", payload);
         if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
           setColumns(prev => {
             const exists = prev.find(c => c.id === payload.new.id);
@@ -542,13 +543,13 @@ export default function Home() {
         }
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cards' }, (payload) => {
+        console.log("🔴 Realtime CARDS event:", payload);
         if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
           setCards(prev => {
             const exists = prev.find(c => c.id === payload.new.id);
             let updated;
             if (exists) updated = prev.map(c => c.id === payload.new.id ? payload.new as CardType : c);
             else updated = [...prev, payload.new as CardType];
-            // Сортируем, чтобы карточки сразу вставали в нужном порядке
             return [...updated].sort((a, b) => {
               if (a.column_id === b.column_id) return (a.position || 0) - (b.position || 0);
               return 0;
@@ -559,6 +560,7 @@ export default function Home() {
         }
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'telegram_users' }, (payload) => {
+        console.log("🔴 Realtime USERS event:", payload);
         if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
           setTelegramUsers(prev => {
             const exists = prev.find(u => u.id === payload.new.id);
@@ -569,7 +571,9 @@ export default function Home() {
           setTelegramUsers(prev => prev.filter(u => u.id !== payload.old.id));
         }
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log("🟢 Supabase Realtime Channel Status:", status);
+      });
 
     return () => { supabase.removeChannel(channel); };
   }, [tgUser, currentBoardId]);
