@@ -36,12 +36,6 @@ export async function POST(req: Request) {
     if (cardData.comment) messageText += `\n💬 Комментарий: ${cardData.comment}`;
   }
 
-  const replyMarkup = JSON.stringify({
-    inline_keyboard: [
-      [{ text: "👁 Посмотреть", url: "https://nprodclone.vercel.app/" }]
-    ]
-  });
-
   try {
     for (const id of chatIds) {
       await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
@@ -49,8 +43,7 @@ export async function POST(req: Request) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: id,
-          text: messageText,
-          reply_markup: replyMarkup
+          text: messageText
         }),
       });
     }
