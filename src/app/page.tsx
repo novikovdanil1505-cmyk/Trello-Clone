@@ -47,8 +47,7 @@ function Card({ card, telegramUsers, onOpen }: { card: CardType, telegramUsers: 
   const cardBg = card.payment_status ? PAYMENT_STYLES[card.payment_status].bg : "bg-white/50 dark:bg-zinc-800/50";
 
   return (
-    <motion.div ref={setNodeRef} {...attributes} {...listeners} style={style} layout initial={{ opacity: 0, scale: 0.8, y: 10 }} animate={{ opacity: isDragging ? 0.4 : 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} onClick={() => onOpen(card)} className={`${cardBg} backdrop-blur-xl p-3 rounded-2xl mb-3 cursor-pointer active:cursor-grabbing border border-white/80 dark:border-white/10 shadow-sm hover:bg-white/80 dark:hover:bg-zinc-800/80 transition-colors select-none touch-none`}>
-      <p className="text-sm text-slate-800 dark:text-slate-100 font-medium mb-1">{card.title}</p>
+    <motion.div ref={setNodeRef} {...attributes} {...listeners} style={style} initial={{ opacity: 0, y: 10 }} animate={{ opacity: isDragging ? 0.4 : 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} onClick={() => onOpen(card)} className={`${cardBg} p-3 rounded-2xl mb-3 cursor-pointer active:cursor-grabbing border border-white/80 dark:border-white/10 shadow-sm hover:bg-white/80 dark:hover:bg-zinc-800/80 select-none touch-none`}>      <p className="text-sm text-slate-800 dark:text-slate-100 font-medium mb-1">{card.title}</p>
       <div className="flex flex-wrap gap-2 mt-2 text-xs text-slate-500 dark:text-slate-400">
         {assignedUsers.map(u => {
           const color = getUserColor(u.chat_id);
@@ -283,9 +282,8 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
   const toggleUser = (chatId: string) => { setSelectedUsers(prev => prev.includes(chatId) ? prev.filter(id => id !== chatId) : [...prev, chatId]); };
 
   return (
-    <motion.div className="fixed inset-0 bg-black/20 dark:bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
-      <motion.div className="bg-white/60 dark:bg-zinc-900/80 backdrop-blur-2xl w-full max-w-md rounded-3xl p-6 border border-white/80 dark:border-white/10 shadow-2xl overflow-y-auto max-h-[90vh] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} onClick={(e) => e.stopPropagation()}>
-        <div className="flex justify-between items-start mb-6">
+    <motion.div className="fixed inset-0 bg-black/40 dark:bg-black/70 z-50 flex items-center justify-center p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+      <motion.div className="bg-white/90 dark:bg-zinc-900/90 w-full max-w-md rounded-3xl p-6 border border-white/80 dark:border-white/10 shadow-2xl overflow-y-auto max-h-[90vh] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 30, opacity: 0 }} transition={{ duration: 0.2 }} onClick={(e) => e.stopPropagation()}>        <div className="flex justify-between items-start mb-6">
           <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="bg-transparent text-xl font-semibold text-slate-800 dark:text-white outline-none w-full focus:border-b focus:border-slate-400" />
           <button onClick={onClose} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 text-2xl ml-4 leading-none">&times;</button>
         </div>
@@ -837,12 +835,9 @@ export default function Home() {
   const archivedCards = cards.filter(c => c.is_archived);
 
   return (
-    <main className="bg-slate-100 h-screen flex flex-col overflow-hidden relative bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-zinc-800 dark:via-zinc-900 dark:to-neutral-900 transition-colors">
-      <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-slate-300/40 dark:bg-zinc-700/30 rounded-full blur-[120px] pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-slate-400/30 dark:bg-neutral-700/30 rounded-full blur-[120px] pointer-events-none"></div>
+    <main className="bg-slate-100 h-screen flex flex-col overflow-hidden relative bg-slate-100 dark:bg-neutral-900 transition-colors">
       
-      <header className="relative z-10 flex items-center justify-between p-4 bg-white/40 dark:bg-white/5 backdrop-blur-2xl border-b border-white/60 dark:border-white/10 shadow-sm">
-        <h1 onClick={toggleTheme} className="text-slate-800 dark:text-white font-semibold text-lg tracking-tight cursor-pointer select-none" title="Нажмите, чтобы сменить тему">
+      <header className="relative z-10 flex items-center justify-between p-4 bg-white/80 dark:bg-zinc-900/80 border-b border-white/60 dark:border-white/10 shadow-sm">        <h1 onClick={toggleTheme} className="text-slate-800 dark:text-white font-semibold text-lg tracking-tight cursor-pointer select-none" title="Нажмите, чтобы сменить тему">
           NOVIKOV
         </h1>
         <div className="flex items-center gap-2">
@@ -858,8 +853,7 @@ export default function Home() {
             {columns.map((col) => {
               const colCards = visibleCards.filter((c) => c.column_id === col.id);
               return (
-                <motion.div key={col.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="group bg-white/40 dark:bg-white/5 backdrop-blur-2xl w-80 rounded-3xl p-3 flex flex-col max-h-full flex-shrink-0 border border-white/60 dark:border-white/10 shadow-lg">
-                  <div className="flex items-center justify-between mb-3 px-3 pt-1 relative z-10">
+                <motion.div key={col.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="group bg-white/60 dark:bg-zinc-800/60 w-80 rounded-3xl p-3 flex flex-col max-h-full flex-shrink-0 border border-white/60 dark:border-white/10 shadow-md">                  <div className="flex items-center justify-between mb-3 px-3 pt-1 relative z-10">
                     <h2 className="font-semibold text-slate-700 dark:text-slate-200 text-sm uppercase tracking-wider">{col.title}</h2>
                     <div className="flex items-center gap-1">
                       <span className="bg-black/5 dark:bg-white/10 text-slate-600 dark:text-slate-300 text-xs px-2 py-1 rounded-full font-medium">{colCards.length}</span>
