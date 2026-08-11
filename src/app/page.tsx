@@ -545,6 +545,7 @@ export default function Home() {
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cards' }, (payload) => {
         console.log("🔴 Realtime CARDS event:", payload);
+        setRtStatus("GOT CARD EVENT!"); // Временная метка для проверки
         if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
           setCards(prev => {
             const exists = prev.find(c => c.id === payload.new.id);
