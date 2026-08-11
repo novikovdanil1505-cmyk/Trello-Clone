@@ -17,11 +17,11 @@ type CardType = {
 type ColumnType = { id: string; title: string; position: number; board_id: string };
 type TelegramUser = { id: string; chat_id: string; name: string; role?: string };
 
-const USER_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'];
 const getUserColor = (id: string) => {
   let hash = 0;
   for (let i = 0; i < id.length; i++) { hash = id.charCodeAt(i) + ((hash << 5) - hash); }
-  return USER_COLORS[Math.abs(hash) % USER_COLORS.length];
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue}, 65%, 50%)`; // Генерируем уникальный цвет для каждого ID
 };
 
 const PAYMENT_STYLES: Record<string, { bg: string, dot: string, text: string }> = {
@@ -201,6 +201,7 @@ function DateSection({ title, dateStr, timeStr, onChange, useTimeRange = false }
 
 function UserSelectDropdown({ users, selectedUsers, onToggle, onDeleteUser }: { users: TelegramUser[], selectedUsers: string[], onToggle: (chatId: string) => void, onDeleteUser: (chatId: string) => void }) {
   const [isOpen, setIsOpen] = useState(false);
+  const availableUsers = users.filter(u => u.role !== 'manager'); // Скрываем менеджеров
 
   return (
     <div className="relative">
@@ -212,8 +213,8 @@ function UserSelectDropdown({ users, selectedUsers, onToggle, onDeleteUser }: { 
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)}></div>
           <div className="absolute z-50 mt-2 w-full bg-white dark:bg-zinc-800 rounded-xl shadow-xl max-h-60 overflow-y-auto border border-slate-200 dark:border-slate-700 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {users.length === 0 ? (<p className="text-xs text-slate-400 dark:text-slate-500 p-3 text-center">Нет пользователей. Напишите боту /start.</p>) : (
-              users.map(user => {
+            {availableUsers.length === 0 ? (<p className="text-xs text-slate-400 dark:text-slate-500 p-3 text-center">Нет пользователей. Напишите боту /start.</p>) : (
+              availableUsers.map(user => {
                 const color = getUserColor(user.chat_id);
                 const isSelected = selectedUsers.includes(user.chat_id);
                 return (
@@ -325,22 +326,33 @@ function ArchivePanel({ cards, onClose, onRestore, onClearAll }: { cards: CardTy
         <div className="flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {cards.length === 0 ? (<div className="text-center mt-20 text-slate-500 dark:text-slate-400"><p className="text-5xl mb-4">🗑️</p><p>Архив пуст</p></div>) : (<div className="space-y-3">{cards.map(card => (<motion.div key={card.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8 }} className="bg-white/50 dark:bg-zinc-800/50 p-3 rounded-xl border border-white/80 dark:border-white/10 shadow-sm flex justify-between items-center gap-2"><p className="text-sm text-slate-800 dark:text-slate-100 font-medium truncate flex-1">{card.title}</p><button onClick={() => onRestore(card.id)} className="text-xs bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors font-medium whitespace-nowrap">Вернуть</button></motion.div>))}</div>)}
         </div>
-          {cards.length > 0 && onClearAll && (<div className="pt-4 mt-4 border-t border-slate-200/60 dark:border-white/10"><button onClick={onClearAll} className="w-full bg-red-500/90 hover:bg-red-500 text-white py-2.5 rounded-xl text-sm font-medium transition-colors shadow-sm flex items-center justify-center gap-2"><TrashIcon size={16} /> Очистить архив</button></div>)}
+        {cards.length > 0 && onClearAll && (<div className="pt-4 mt-4 border-t border-slate-200/60 dark:border-white/10"><button onClick={onClearAll} className="w-full bg-red-500/90 hover:bg-red-500 text-white py-2.5 rounded-xl text-sm font-medium transition-colors shadow-sm flex items-center justify-center gap-2"><TrashIcon size={16} /> Очистить архив</button></div>)}
       </motion.div>
     </motion.div>
   );
 }
 
 // --- Календарь бронирования ---
-function CalendarModal({ cards, chatId, onClose }: { cards: CardType[], chatId?: string, onClose: () => void }) {
+function CalendarModal({ cards, chatId, role, onClose }: { cards: CardType[], chatId?: string, role?: string, onClose: () => void }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   
-  // НОВОЕ: Получаем цвет пользователя
-  const userColor = chatId ? getUserColor(chatId) : '#3b82f6'; 
+  const bookedDatesMap: Record<string, string[]> = {};
+  const visibleCardsForCalendar = cards.filter(c => c.due_date && !c.is_archived);
   
-  const bookedDates = new Set(
-    cards.filter(c => c.due_date && !c.is_archived && c.telegram_ids?.includes(chatId || '0')).map(c => c.due_date)
-  );
+  visibleCardsForCalendar.forEach(c => {
+    if (c.telegram_ids) {
+      const ids = c.telegram_ids.split(',').filter(Boolean);
+      ids.forEach(id => {
+        // Админ и менеджер видят всех, остальные — только себя
+        if (role === 'admin' || role === 'manager' || id === chatId) {
+          if (!bookedDatesMap[c.due_date!]) bookedDatesMap[c.due_date!] = [];
+          if (!bookedDatesMap[c.due_date!].includes(id)) {
+            bookedDatesMap[c.due_date!].push(id);
+          }
+        }
+      });
+    }
+  });
 
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
@@ -372,25 +384,30 @@ function CalendarModal({ cards, chatId, onClose }: { cards: CardType[], chatId?:
           {blanksArray.map((_, i) => <div key={`blank-${i}`} className="p-2"></div>)}
           {daysArray.map(day => {
             const dateStr = formatDate(day);
-            const isBooked = bookedDates.has(dateStr);
+            const bookedUsers = bookedDatesMap[dateStr] || [];
+            const isBooked = bookedUsers.length > 0;
             const today = isToday(day);
+            
             return (
-              // ИЗМЕНЕНО: используем inline-стили с цветом пользователя (прозрачность 20% для фона)
               <div 
                 key={day} 
-                style={isBooked && !today ? { backgroundColor: `${userColor}20`, color: userColor } : {}} 
                 className={`p-2 rounded-lg relative flex flex-col items-center justify-center text-sm transition-colors ${today ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 font-bold' : 'text-slate-700 dark:text-slate-200'} ${isBooked ? 'font-semibold' : ''}`}
               >
                 {day}
-                {isBooked && !today && <span style={{ backgroundColor: userColor }} className="absolute bottom-1 w-1.5 h-1.5 rounded-full"></span>}
+                {isBooked && !today && (
+                  <div className="absolute bottom-1 flex gap-0.5 justify-center">
+                    {bookedUsers.map(uid => (
+                      <span key={uid} style={{ backgroundColor: getUserColor(uid) }} className="w-1.5 h-1.5 rounded-full"></span>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
         <div className="mt-6 pt-4 border-t border-slate-200/60 dark:border-white/10 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
-          {/* ИЗМЕНЕНО: цвет точки в легенде */}
-          <span style={{ backgroundColor: userColor }} className="w-2 h-2 rounded-full"></span>
-          <span>Ваши забронированные даты</span>
+          <span className="w-2 h-2 rounded-full bg-slate-400"></span>
+          <span>{role === 'admin' || role === 'manager' ? 'Бронирования всех пользователей' : 'Ваши забронированные даты'}</span>
         </div>
       </motion.div>
     </motion.div>
@@ -603,14 +620,41 @@ export default function Home() {
         newColId = overId as string;
       }
       if (oldColId !== newColId) {
-        const colTitle = columns.find(c => c.id === newColId)?.title;
-        const chatIds = activeCard.telegram_ids ? activeCard.telegram_ids.split(',').filter(Boolean) : [];
-        if (chatIds.length > 0 && colTitle) {
-          fetch('/api/telegram', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chatIds, cardData: { title: activeCard.title }, type: 'status', newStatus: colTitle })
-          }).catch(err => console.error("Telegram API error:", err));
+        const colTitle = columns.find(c => c.id === newColId)?.title?.toLowerCase() || '';
+        const oldTgIds = activeCard.telegram_ids; // Сохраняем старые ID для БД
+        
+        if (colTitle.includes('монтаж')) {
+          const currentTgIds = oldTgIds ? oldTgIds.split(',').filter(Boolean) : [];
+          // Оставляем только не-операторов
+          const filteredIds = currentTgIds.filter(id => {
+            const user = telegramUsers.find(u => u.chat_id === id);
+            return user?.role !== 'operator';
+          });
+          // Находим всех монтажников
+          const montazhers = telegramUsers.filter(u => u.role === 'montazher').map(u => u.chat_id);
+          // Объединяем (уникальные)
+          const newTgIds = Array.from(new Set([...filteredIds, ...montazhers]));
+          
+          activeCard.telegram_ids = newTgIds.length > 0 ? newTgIds.join(',') : null;
+          
+          // Уведомляем новых назначенных монтажников
+          const newlyAssigned = montazhers.filter(id => !currentTgIds.includes(id));
+          if (newlyAssigned.length > 0) {
+            fetch('/api/telegram', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ chatIds: newlyAssigned, cardData: { title: activeCard.title }, type: 'new' })
+            }).catch(err => console.error("Telegram API error:", err));
+          }
+        } else {
+          const chatIds = activeCard.telegram_ids ? activeCard.telegram_ids.split(',').filter(Boolean) : [];
+          if (chatIds.length > 0 && colTitle) {
+            fetch('/api/telegram', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ chatIds, cardData: { title: activeCard.title }, type: 'status', newStatus: colTitle })
+            }).catch(err => console.error("Telegram API error:", err));
+          }
         }
       }
       activeCard.column_id = newColId;
@@ -626,9 +670,16 @@ export default function Home() {
         let pos = 1;
         updatedCards.forEach(c => {
           if (c.column_id === colId) {
-            if (c.position !== pos) {
+            const isMovedCard = c.id === activeCard.id;
+            const tgChanged = isMovedCard && c.telegram_ids !== oldTgIds; // Проверяем, изменились ли юзеры
+            
+            if (c.position !== pos || tgChanged) {
               c.position = pos;
-              supabase.from('cards').update({ column_id: c.column_id, position: pos }).eq('id', c.id).then();
+              if (tgChanged) {
+                supabase.from('cards').update({ column_id: c.column_id, position: pos, telegram_ids: c.telegram_ids }).eq('id', c.id).then();
+              } else {
+                supabase.from('cards').update({ column_id: c.column_id, position: pos }).eq('id', c.id).then();
+              }
             }
             pos++;
           }
@@ -763,8 +814,7 @@ export default function Home() {
       </DndContext>
 
       <AnimatePresence>
-        {isCalendarOpen && (<CalendarModal cards={cards} chatId={tgUser?.chat_id} onClose={() => setIsCalendarOpen(false)} />)}
-      </AnimatePresence>
+        {isCalendarOpen && (<CalendarModal cards={cards} chatId={tgUser?.chat_id} role={tgUser?.role} onClose={() => setIsCalendarOpen(false)} />)}      </AnimatePresence>
 
       <AnimatePresence>{editingCard && (<CardModal card={editingCard} telegramUsers={telegramUsers} onClose={() => setEditingCard(null)} onUpdate={handleUpdateCard} onArchive={(id) => handleToggleArchive(id, true)} onDeleteTelegramUser={handleDeleteTelegramUser} />)}</AnimatePresence>
       <AnimatePresence>{isArchiveOpen && (<ArchivePanel cards={archivedCards} onClose={() => setIsArchiveOpen(false)} onRestore={(id) => handleToggleArchive(id, false)} onClearAll={isAdmin ? handleClearArchive : undefined} />)}</AnimatePresence>
