@@ -311,12 +311,6 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
         <DateSection title="ДАТА" dateStr={card.due_date} timeStr={card.due_time} useTimeRange={true} onChange={(d, t) => { setDueDate(d); setDueTime(t); }} />
         <DateSection title="Срок выполнения" dateStr={card.deadline_date} timeStr={card.deadline_time} onChange={(d, t) => { setDeadlineDate(d); setDeadlineTime(t); }} />
 
-
-                <div className="mb-6">
-          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Комментарий</h3>
-          <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Напишите что-нибудь..." className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-slate-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 resize-none" rows={4} />
-        </div>
-
         <div className="mb-6">
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Материалы</h3>
           <div className="space-y-3">
@@ -324,6 +318,12 @@ function CardModal({ card, telegramUsers, onClose, onUpdate, onArchive, onDelete
             <input type="url" value={finishedMaterial} onChange={(e) => setFinishedMaterial(e.target.value)} placeholder="Ссылка на готовый материал" className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-green-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500" />
           </div>
         </div>
+
+                <div className="mb-6">
+          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Комментарий</h3>
+          <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Напишите что-нибудь..." className="w-full p-3 bg-white/40 dark:bg-zinc-800/50 border border-white/60 dark:border-white/10 rounded-2xl outline-none focus:ring-1 focus:ring-slate-400 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 resize-none" rows={4} />
+        </div>
+
 
         <div className="flex gap-3">
           <button onClick={handleSave} className="w-full bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 py-3 rounded-2xl font-medium hover:bg-slate-700 dark:hover:bg-white transition-colors shadow-md">Сохранить</button>
